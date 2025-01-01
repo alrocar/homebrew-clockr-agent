@@ -17,38 +17,15 @@ class TinyScreenMonitor < Formula
     # Create logs directory with write permissions
     (var/"log/tiny-screen-monitor").mkpath
     chmod 0755, var/"log/tiny-screen-monitor"
-
-    # Install LaunchAgent plist
-    prefix.install "bin/tiny-screen-monitor.plist"
   end
 
-  def plist
-    <<~EOS
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-      <dict>
-          <key>Label</key>
-          <string>#{plist_name}</string>
-          <key>ProgramArguments</key>
-          <array>
-              <string>#{opt_bin}/tiny-screen-monitor</string>
-          </array>
-          <key>RunAtLoad</key>
-          <true/>
-          <key>KeepAlive</key>
-          <true/>
-          <key>StandardErrorPath</key>
-          <string>#{var}/log/tiny-screen-monitor/error.log</string>
-          <key>StandardOutPath</key>
-          <string>#{var}/log/tiny-screen-monitor/output.log</string>
-      </dict>
-      </plist>
-    EOS
-  end
-
-  def plist_name
-    "com.alrocar.tiny-screen-monitor"
+  service do
+    name macos: "com.alrocar.tiny-screen-monitor"
+    run bin/"tiny-screen-monitor"
+    working_dir HOMEBREW_PREFIX
+    keep_alive true
+    log_path var/"log/tiny-screen-monitor/output.log"
+    error_log_path var/"log/tiny-screen-monitor/error.log"
   end
 
   def caveats
