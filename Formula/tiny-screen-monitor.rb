@@ -22,14 +22,12 @@ class TinyScreenMonitor < Formula
     prefix.install "bin/tiny-screen-monitor.plist"
   end
 
-  def service
-    {
-      run: [opt_bin/"tiny-screen-monitor"],
-      keep_alive: true,
-      error_log_path: var/"log/tiny-screen-monitor/service_error.log",
-      log_path: var/"log/tiny-screen-monitor/service_output.log",
-      requires_root: false
-    }
+  service do
+    run opt_bin/"tiny-screen-monitor"
+    keep_alive true
+    error_log_path var/"log/tiny-screen-monitor/service_error.log"
+    log_path var/"log/tiny-screen-monitor/service_output.log"
+    requires_root false
   end
 
   def plist_name
