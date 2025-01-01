@@ -35,8 +35,8 @@ log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" | tee -a "$LOG_FILE"
 }
 
-# Source the display status checker
-source "./check_display.sh"
+# Source the display status checker from Homebrew's bin directory
+source "$BREW_PREFIX/bin/check_display.sh"
 
 while true; do
     source "$CONFIG_FILE" || {
