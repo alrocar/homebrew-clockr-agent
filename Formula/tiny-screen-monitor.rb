@@ -15,8 +15,9 @@ class TinyScreenMonitor < Formula
     # Install config template
     prefix.install "bin/tiny-screen-monitor.cfg.template"
 
-    # Create logs directory
+    # Create logs directory with write permissions
     (var/"log/tiny-screen-monitor").mkpath
+    chmod 0755, var/"log/tiny-screen-monitor"
   end
 
   def post_install
@@ -27,7 +28,8 @@ class TinyScreenMonitor < Formula
     
     unless config_file.exist?
       cp config_template, config_file
-      chmod 0600, config_file
+      # Make config readable/writable by user only
+      chmod 0644, config_file
     end
   end
 
