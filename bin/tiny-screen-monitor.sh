@@ -3,7 +3,7 @@
 previous_state="uninitialized"
 
 # Add error handling for required commands
-for cmd in osascript curl brew; do
+for cmd in osascript curl; do
     if ! command -v "$cmd" &> /dev/null; then
         echo "Error: Required command '$cmd' not found"
         exit 1
