@@ -21,11 +21,12 @@ class TinyScreenMonitor < Formula
 
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
-    run bin/"tiny-screen-monitor"
+    run ["/bin/bash", "-l", "-c", opt_bin/"tiny-screen-monitor"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
     log_path var/"log/tiny-screen-monitor/output.log"
     error_log_path var/"log/tiny-screen-monitor/error.log"
+    environment_variables PATH: std_service_path_env
   end
 
   def caveats
