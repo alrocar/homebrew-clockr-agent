@@ -11,7 +11,7 @@ for cmd in osascript curl; do
 done
 
 # Configuration handling
-CONFIG_FILE="${1:-./tiny-screen-monitor.cfg}"
+CONFIG_FILE="${1:-/etc/tiny-screen-monitor/tiny-screen-monitor.cfg}"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "Error: Configuration file not found at $CONFIG_FILE"
     echo "Please create a configuration file with required variables:"
@@ -22,8 +22,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 fi
 
 # Setup logging
-LOG_DIR="./logs"
-mkdir -p "$LOG_DIR"
+LOG_DIR="/var/log/tiny-screen-monitor"
 LOG_FILE="${LOG_DIR}/tiny-screen-monitor.log"
 
 log() {
