@@ -1,17 +1,13 @@
 import Cocoa
 
-// Add bundle identifier
 @objc(TinyScreenMonitorApp)
 class AppDelegate: NSObject, NSApplicationDelegate {
     let task = Process()
+    let bundleIdentifier = "com.alrocar.tiny-screen-monitor"
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Set bundle identifier
-        if let bundle = Bundle.main.bundleIdentifier {
-            log("Using bundle identifier: \(bundle)")
-        } else {
-            Bundle.main.bundleIdentifier = "com.alrocar.tiny-screen-monitor"
-        }
+        // Log app info
+        NSLog("Starting TinyScreenMonitor with identifier: \(bundleIdentifier)")
         
         task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/tiny-screen-monitor.sh")
         try? task.run()
@@ -22,7 +18,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-// Main entry point
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
