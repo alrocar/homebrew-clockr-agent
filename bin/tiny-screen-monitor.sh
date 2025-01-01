@@ -3,7 +3,7 @@
 previous_state="uninitialized"
 
 # Add error handling for required commands
-for cmd in osascript curl; do
+for cmd in osascript curl brew; do
     if ! command -v "$cmd" &> /dev/null; then
         echo "Error: Required command '$cmd' not found"
         exit 1
@@ -11,7 +11,8 @@ for cmd in osascript curl; do
 done
 
 # Configuration handling
-CONFIG_FILE="${1:-/etc/tiny-screen-monitor/tiny-screen-monitor.cfg}"
+BREW_PREFIX=$(brew --prefix)
+CONFIG_FILE="${1:-$BREW_PREFIX/etc/tiny-screen-monitor/tiny-screen-monitor.cfg}"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "Error: Configuration file not found at $CONFIG_FILE"
     echo "Please create a configuration file with required variables:"
@@ -21,9 +22,12 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
-# Setup logging
-LOG_DIR="/var/log/tiny-screen-monitor"
+# Setup logging using Homebrew's var directory
+LOG_DIR="$BREW_PREFIX/var/log/tiny-screen-monitor"
 LOG_FILE="${LOG_DIR}/tiny-screen-monitor.log"
+
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR"
 
 log() {
     local level="$1"
