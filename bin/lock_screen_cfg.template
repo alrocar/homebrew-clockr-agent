@@ -1,0 +1,4 @@
+# Configuration for screen-monitor
+LOCKED_TB_TOKEN=your_tinybird_token
+LOCKED_SCREEN_USER=your_username
+LOCKED_SCREEN_SLEEP_TIME=10 
