@@ -8,9 +8,13 @@ class TinyScreenMonitor < Formula
   depends_on "curl"
 
   def install
-    bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
+    bin.install "bin/tiny-screen-monitor.sh"
+    bin.install "bin/tiny-screen-monitor.swift" => "tiny-screen-monitor"
     bin.install "bin/check_display.sh"
-
+    
+    # Make executable
+    chmod 0755, bin/"tiny-screen-monitor"
+    
     # Install config template
     prefix.install "bin/tiny-screen-monitor.cfg.template"
 
