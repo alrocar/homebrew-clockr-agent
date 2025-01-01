@@ -13,7 +13,9 @@ class TinyScreenMonitor < Formula
     # Compile and install the app wrapper
     system "swiftc", 
            "-framework", "Cocoa",
-           "-o", bin/"tiny-screen-monitor", 
+           "-o", bin/"tiny-screen-monitor",
+           "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
+           "-module-name", "TinyScreenMonitor",
            "bin/TinyScreenMonitor.swift" \
     or raise "Swift compilation failed"
     
