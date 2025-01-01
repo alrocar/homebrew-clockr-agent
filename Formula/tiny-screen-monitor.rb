@@ -21,15 +21,15 @@ class TinyScreenMonitor < Formula
 
   def post_install
     # Copy config template if it doesn't exist
-    config_template = prefix/"tiny-screen-monitor.cfg.template"
-    config_file = Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
+    # config_template = prefix/"tiny-screen-monitor.cfg.template"
+    # config_file = Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
 
-    unless config_file.exist?
-      # Use system cp instead of Ruby's cp to handle permissions better
-      system "cp", config_template.to_s, config_file.to_s
-      system "chmod", "0600", config_file.to_s
-      puts "Configuration file created at: #{config_file}"
-    end
+    # unless config_file.exist?
+    #   # Use system cp instead of Ruby's cp to handle permissions better
+    #   system "cp", config_template.to_s, config_file.to_s
+    #   system "chmod", "0600", config_file.to_s
+    #   puts "Configuration file created at: #{config_file}"
+    # end
   end
 
   def caveats
@@ -37,7 +37,7 @@ class TinyScreenMonitor < Formula
       To complete the installation:
 
       1. Create your configuration file:
-         cp #{prefix}/lock_screen_cfg.template #{Dir.home}/tiny-screen-monitor.cfg
+         cp #{prefix}/tiny-screen-monitor.cfg.template #{Dir.home}/tiny-screen-monitor.cfg
          chmod 600 #{Dir.home}/tiny-screen-monitor.cfg
 
       2. Edit your configuration file:
