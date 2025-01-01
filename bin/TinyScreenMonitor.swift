@@ -6,6 +6,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let bundleIdentifier = "com.alrocar.tiny-screen-monitor"
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Request permissions upfront
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        AXIsProcessTrustedWithOptions(options)
+        
         // Log app info
         NSLog("Starting TinyScreenMonitor with identifier: \(bundleIdentifier)")
         
