@@ -18,16 +18,33 @@ class TinyScreenMonitor < Formula
     (var/"log/tiny-screen-monitor").mkpath
     chmod 0755, var/"log/tiny-screen-monitor"
 
-    # Install LaunchAgent from repo
+    # Install LaunchAgent plist
     prefix.install "bin/tiny-screen-monitor.plist"
   end
 
-  service do
-    run opt_bin/"tiny-screen-monitor"
-    keep_alive true
-    error_log_path var/"log/tiny-screen-monitor/service_error.log"
-    log_path var/"log/tiny-screen-monitor/service_output.log"
-    requires_root false
+  def plist
+    <<~EOS
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+          <key>Label</key>
+          <string>#{plist_name}</string>
+          <key>ProgramArguments</key>
+          <array>
+              <string>#{opt_bin}/tiny-screen-monitor</string>
+          </array>
+          <key>RunAtLoad</key>
+          <true/>
+          <key>KeepAlive</key>
+          <true/>
+          <key>StandardErrorPath</key>
+          <string>#{var}/log/tiny-screen-monitor/error.log</string>
+          <key>StandardOutPath</key>
+          <string>#{var}/log/tiny-screen-monitor/output.log</string>
+      </dict>
+      </plist>
+    EOS
   end
 
   def plist_name
