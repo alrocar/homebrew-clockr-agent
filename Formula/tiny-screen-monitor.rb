@@ -27,7 +27,8 @@ class TinyScreenMonitor < Formula
       run: [opt_bin/"tiny-screen-monitor"],
       keep_alive: true,
       error_log_path: var/"log/tiny-screen-monitor/service_error.log",
-      log_path: var/"log/tiny-screen-monitor/service_output.log"
+      log_path: var/"log/tiny-screen-monitor/service_output.log",
+      requires_root: false
     }
   end
 
