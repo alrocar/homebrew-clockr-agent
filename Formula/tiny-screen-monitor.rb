@@ -9,11 +9,12 @@ class TinyScreenMonitor < Formula
 
   def install
     bin.install "bin/tiny-screen-monitor.sh"
-    bin.install "bin/tiny-screen-monitor.swift" => "tiny-screen-monitor"
-    bin.install "bin/check_display.sh"
     
-    # Make executable
+    # Compile and install the app wrapper
+    system "swiftc", "-o", bin/"tiny-screen-monitor", "bin/TinyScreenMonitor.swift"
     chmod 0755, bin/"tiny-screen-monitor"
+    
+    bin.install "bin/check_display.sh"
     
     # Install config template
     prefix.install "bin/tiny-screen-monitor.cfg.template"
