@@ -1,13 +1,12 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/tiny-screen-monitor"
-  url "https://github.com/alrocar/tiny-screen-monitor/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "YOUR_TARBALL_SHA256" # You'll need to update this after creating the release
+  url "https://github.com/alrocar/tiny-screen-monitor/archive/refs/tags/v0.0.0.dev0.tar.gz"
+  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
   license "MIT"
 
   depends_on "curl"
-  depends_on "osascript"
-
+  
   def install
     bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
     bin.install "bin/check_display.sh"
