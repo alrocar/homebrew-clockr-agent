@@ -6,7 +6,7 @@ class TinyScreenMonitor < Formula
   license "MIT"
 
   depends_on "curl"
-  
+
   def install
     bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
     bin.install "bin/check_display.sh"
@@ -21,7 +21,7 @@ class TinyScreenMonitor < Formula
   def post_install
     # Copy config template if it doesn't exist
     config_template = prefix/"tiny-screen-monitor.cfg.template"
-    config_file = ENV["HOME"]/"tiny-screen-monitor.cfg"
+    config_file = Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
     
     unless config_file.exist?
       cp config_template, config_file
@@ -34,7 +34,7 @@ class TinyScreenMonitor < Formula
       To complete the installation:
       
       1. Edit your configuration file:
-         $EDITOR #{ENV["HOME"]}/tiny-screen-monitor.cfg
+         $EDITOR #{Dir.home}/tiny-screen-monitor.cfg
       
       2. Ensure you have granted necessary permissions:
          - Accessibility access for monitoring active applications
@@ -50,7 +50,7 @@ class TinyScreenMonitor < Formula
     rm_rf var/"log/tiny-screen-monitor"
     
     # Optionally remove config file (uncomment if desired)
-    # rm_f ENV["HOME"]/"tiny-screen-monitor.cfg"
+    rm_f Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
   end
 
   test do
