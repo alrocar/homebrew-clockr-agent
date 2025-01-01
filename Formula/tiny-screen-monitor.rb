@@ -31,6 +31,10 @@ class TinyScreenMonitor < Formula
     }
   end
 
+  def plist_name
+    "com.alrocar.tiny-screen-monitor"
+  end
+
   def caveats
     <<~EOS
       To complete the installation:
