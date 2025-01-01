@@ -1,0 +1,4 @@
+# Configuration for tiny-screen-monitor
+TSM_TB_TOKEN=your_tinybird_token
+TSM_SCREEN_USER=your_username
+TSM_SCREEN_SLEEP_TIME=10 
