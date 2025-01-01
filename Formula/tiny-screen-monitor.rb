@@ -2,7 +2,6 @@ class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
   url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev9.tar.gz"
-  # curl -L https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev2.tar.gz | shasum -a 256
   sha256 "db45417a21e4d93a77794f358e1ddd747b5b296178ba14d7527ccc9ec7b99f4f"
   license "MIT"
 
@@ -23,8 +22,13 @@ class TinyScreenMonitor < Formula
     prefix.install "bin/tiny-screen-monitor.plist"
   end
 
-  def plist_name
-    "com.alrocar.tiny-screen-monitor"
+  def service
+    {
+      run: [opt_bin/"tiny-screen-monitor"],
+      keep_alive: true,
+      error_log_path: var/"log/tiny-screen-monitor/error.log",
+      log_path: var/"log/tiny-screen-monitor/output.log"
+    }
   end
 
   def caveats
