@@ -1,11 +1,19 @@
 #!/bin/bash
 
+# Trap Ctrl+C and cleanup
+cleanup() {
+    log "INFO" "Shutting down tiny-screen-monitor..."
+    exit 0
+}
+
+trap cleanup SIGINT
+
 previous_state="uninitialized"
 
 # Add error handling for required commands
 for cmd in osascript curl; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "Error: Required command '$cmd' not found"
+        echo "ERROR" "Required command '$cmd' not found"
         exit 1
     fi
 done
@@ -14,11 +22,11 @@ done
 BREW_PREFIX=$(brew --prefix)
 CONFIG_FILE="${1:-$BREW_PREFIX/etc/tiny-screen-monitor/tiny-screen-monitor.cfg}"
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "Error: Configuration file not found at $CONFIG_FILE"
-    echo "Please create a configuration file with required variables:"
-    echo "TSM_TB_TOKEN=your_tinybird_token"
-    echo "TSM_SCREEN_USER=your_username"
-    echo "TSM_SCREEN_SLEEP_TIME=10"
+    echo "ERROR" "Configuration file not found at $CONFIG_FILE"
+    echo "ERROR" "Please create a configuration file with required variables:"
+    echo "ERROR" "TSM_TB_TOKEN=your_tinybird_token"
+    echo "ERROR" "TSM_SCREEN_USER=your_username"
+    echo "ERROR" "TSM_SCREEN_SLEEP_TIME=10"
     exit 1
 fi
 
@@ -55,9 +63,50 @@ while true; do
         status="locked"
     fi
 
+    # Get active app
     active_app=$(osascript -e 'tell application "System Events" to get name of application processes whose frontmost is true' 2>/dev/null)
-    active_tab_url=$(osascript -e 'tell application "System Events" to if (name of first application process whose frontmost is true) is "Arc" then tell application "Arc" to get URL of active tab of window 1' 2>/dev/null)
-    active_domain=$(echo "$active_tab_url" | awk -F/ '{print $3}')
+    echo $active_app
+    # Get URL if active app is a browser
+    active_tab_url=""
+    # List of known browsers
+    browsers=(
+        "Arc" 
+        "Safari" 
+        "Google Chrome" 
+        # "Firefox" 
+        "Opera" 
+        # "DuckDuckGo" 
+        "Brave Browser" 
+        # "Min" 
+        "Microsoft Edge" 
+        "Vivaldi"
+        "Chromium"
+        # "Tor Browser"
+    )
+    
+    # Check if active_app is in the browsers list (case-insensitive)
+    active_app_lower=$(echo "$active_app" | tr '[:upper:]' '[:lower:]')
+    for browser in "${browsers[@]}"; do
+        browser_lower=$(echo "$browser" | tr '[:upper:]' '[:lower:]')
+        if [ "$active_app_lower" = "$browser_lower" ]; then
+            case "$browser" in
+                "Arc"|"Google Chrome"|"Opera"|"Brave Browser"|"Microsoft Edge"|"Vivaldi"|"Chromium")
+                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app\" then tell application \"$active_app\" to get URL of active tab of window 1" 2>/dev/null)
+                    ;;
+                *)
+                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app\" then tell application \"$active_app\" to get URL of current tab of front window" 2>/dev/null)
+                    ;;
+            esac
+            break
+        fi
+    done
+    
+    # Extract domain if URL exists
+    active_domain=""
+    if [ -n "$active_tab_url" ]; then
+        active_domain=$(echo "$active_tab_url" | awk -F/ '{print $3}')
+        log "INFO" "Active domain: $active_domain"
+    fi
     echo $active_domain
 
     curl \
