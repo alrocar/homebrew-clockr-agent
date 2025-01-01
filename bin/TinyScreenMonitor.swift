@@ -1,6 +1,5 @@
 import Cocoa
 
-@main
 class AppDelegate: NSObject, NSApplicationDelegate {
     let task = Process()
     
@@ -12,11 +11,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         task.terminate()
     }
-    
-    static func main() {
-        let app = NSApplication.shared
-        let delegate = AppDelegate()
-        app.delegate = delegate
-        app.run()
-    }
-} 
+}
+
+// Main entry point
+let app = NSApplication.shared
+let delegate = AppDelegate()
+app.delegate = delegate
+app.run() 

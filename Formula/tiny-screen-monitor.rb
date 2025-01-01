@@ -11,7 +11,12 @@ class TinyScreenMonitor < Formula
     bin.install "bin/tiny-screen-monitor.sh"
     
     # Compile and install the app wrapper
-    system "swiftc", "-o", bin/"tiny-screen-monitor", "bin/TinyScreenMonitor.swift"
+    system "swiftc", 
+           "-framework", "Cocoa",
+           "-o", bin/"tiny-screen-monitor", 
+           "bin/TinyScreenMonitor.swift" \
+    or raise "Swift compilation failed"
+    
     chmod 0755, bin/"tiny-screen-monitor"
     
     bin.install "bin/check_display.sh"
