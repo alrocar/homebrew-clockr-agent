@@ -25,8 +25,10 @@ class TinyScreenMonitor < Formula
     config_file = Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
 
     unless config_file.exist?
-      cp config_template, config_file
-      chmod 0600, config_file
+      # Use system cp instead of Ruby's cp to handle permissions better
+      system "cp", config_template.to_s, config_file.to_s
+      system "chmod", "0600", config_file.to_s
+      puts "Configuration file created at: #{config_file}"
     end
   end
 
@@ -34,14 +36,18 @@ class TinyScreenMonitor < Formula
     <<~EOS
       To complete the installation:
 
-      1. Edit your configuration file:
+      1. Create your configuration file:
+         cp #{prefix}/lock_screen_cfg.template #{Dir.home}/tiny-screen-monitor.cfg
+         chmod 600 #{Dir.home}/tiny-screen-monitor.cfg
+
+      2. Edit your configuration file:
          $EDITOR #{Dir.home}/tiny-screen-monitor.cfg
 
-      2. Ensure you have granted necessary permissions:
+      3. Ensure you have granted necessary permissions:
          - Accessibility access for monitoring active applications
          - Screen Recording permission for capturing browser URLs
 
-      3. Start the service:
+      4. Start the service:
          tiny-screen-monitor
     EOS
   end
