@@ -18,19 +18,13 @@ class TinyScreenMonitor < Formula
     # Create logs directory with write permissions
     (var/"log/tiny-screen-monitor").mkpath
     chmod 0755, var/"log/tiny-screen-monitor"
+
+    # Install LaunchAgent from repo
+    prefix.install "bin/tiny-screen-monitor.plist"
   end
 
-  def post_install
-    # Create etc directory and copy config
-    (etc/"tiny-screen-monitor").mkpath
-    config_template = prefix/"tiny-screen-monitor.cfg.template"
-    config_file = etc/"tiny-screen-monitor/tiny-screen-monitor.cfg"
-    
-    unless config_file.exist?
-      cp config_template, config_file
-      # Make config readable/writable by user only
-      chmod 0644, config_file
-    end
+  def plist_name
+    "com.alrocar.tiny-screen-monitor"
   end
 
   def caveats
@@ -38,13 +32,16 @@ class TinyScreenMonitor < Formula
       To complete the installation:
 
       1. Edit your configuration file:
-         $EDITOR /etc/tiny-screen-monitor/tiny-screen-monitor.cfg
+         $EDITOR #{etc}/tiny-screen-monitor/tiny-screen-monitor.cfg
 
       2. Ensure you have granted necessary permissions:
          - Accessibility access for monitoring active applications
          - Screen Recording permission for capturing browser URLs
 
       3. Start the service:
+         brew services start tiny-screen-monitor
+
+      Or to start manually:
          tiny-screen-monitor
     EOS
   end
