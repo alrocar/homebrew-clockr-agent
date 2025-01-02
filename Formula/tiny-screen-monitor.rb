@@ -82,7 +82,7 @@ class TinyScreenMonitor < Formula
   end
 
   service do
-    name macos: "tiny-screen-monitor"
+    name macos: "com.alrocar.tiny-screen-monitor"
     run opt_bin/"tiny-screen-monitor"
     working_dir HOMEBREW_PREFIX
     keep_alive true

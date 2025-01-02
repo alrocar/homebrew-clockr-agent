@@ -1,4 +1,5 @@
 import Cocoa
+import Foundation
 
 @objc(TinyScreenMonitorApp)
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -19,11 +20,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             exit(0)
         }
         
-        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/tiny-screen-monitor.sh")
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
+        task.arguments = ["-c", "exec /opt/homebrew/bin/tiny-screen-monitor.sh"]
+        
+        // Create a new process group
+        task.qualityOfService = .userInitiated
+        task.standardOutput = FileHandle.standardOutput
+        task.standardError = FileHandle.standardError
         
         // Set up task termination handling
         task.terminationHandler = { task in
             NSLog("Shell script terminated with status: \(task.terminationStatus)")
+            
+            // Kill entire process group
+            if let pid = self.task.processIdentifier {
+                NSLog("Killing process group \(-pid)")
+                kill(-pid, SIGTERM)
+                Thread.sleep(forTimeInterval: 0.5)
+                kill(-pid, SIGKILL)
+            }
+            
             NSApplication.shared.terminate(nil)
         }
         
@@ -33,7 +49,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NSLog("Application terminating, cleaning up...")
         
-        // Send SIGTERM to the shell script
+        // Kill the entire process group
+        if let pid = task.processIdentifier {
+            NSLog("Killing process group \(-pid)")
+            kill(-pid, SIGTERM)
+            Thread.sleep(forTimeInterval: 0.5)
+            kill(-pid, SIGKILL)
+        }
+        
+        // Terminate the main task
         task.terminate()
         
         // Wait briefly for cleanup
