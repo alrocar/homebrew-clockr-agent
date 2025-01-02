@@ -1,49 +1,12 @@
 #!/bin/bash
 
-# Define lock file
-LOCK_FILE="/tmp/tiny-screen-monitor.lock"
-
+# Trap Ctrl+C and cleanup
 cleanup() {
-    echo "Cleaning up..."
-    rm -f "$LOCK_FILE"
-    # Kill any lingering osascript processes
-    pkill -f "osascript.*System Events" 2>/dev/null
+    log "INFO" "Shutting down tiny-screen-monitor..."
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM EXIT
-
-# More thorough process check
-check_running_processes() {
-    # Get current PID and PPID
-    CURRENT_PID=$$
-    PARENT_PID=$PPID
-
-    # Check for existing lock file
-    if [ -f "$LOCK_FILE" ]; then
-        OLD_PID=$(cat "$LOCK_FILE")
-        if ps -p "$OLD_PID" > /dev/null 2>&1; then
-            echo "Process already running with PID $OLD_PID"
-            exit 1
-        else
-            # Stale lock file
-            rm -f "$LOCK_FILE"
-        fi
-    fi
-
-    # Create new lock file
-    echo $$ > "$LOCK_FILE"
-
-    # Kill any lingering processes
-    for pid in $(pgrep -f "tiny-screen-monitor" | grep -v $CURRENT_PID | grep -v $PARENT_PID); do
-        kill $pid 2>/dev/null
-    done
-    pkill -f "osascript.*System Events" 2>/dev/null
-    sleep 1
-}
-
-# Run process check at start
-check_running_processes
+trap cleanup SIGINT
 
 previous_state="uninitialized"
 
@@ -172,19 +135,7 @@ while true; do
     curl \
         -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
         -H "Authorization: Bearer $TSM_TB_TOKEN" \
-        -d "$(cat <<EOF
-{
-  "timestamp": "$current_date",
-  "status": "$status", 
-  "user": "$TSM_SCREEN_USER",
-  "duration": $TSM_SCREEN_SLEEP_TIME,
-  "app": "$active_app_name",
-  "window_title": "$window_title",
-  "domains": ["$active_domain"],
-  "tabs": ["$active_tab_url"]
-}
-EOF
-)" \
+        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app_name\",\"window_title\":\"$window_title\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
         &
 
     end_time=$(date +%s)
