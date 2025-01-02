@@ -37,12 +37,18 @@ class TinyScreenMonitor < Formula
     system "sudo", "chmod", "755", "#{var}/log/tiny-screen-monitor"
   end
 
+  def cleanup_processes
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    sleep 1
+  end
+
   def post_install
     setup_permanent_script
     
     # Stop service
     system "brew", "services", "stop", name rescue nil
     sleep 1
+    cleanup_processes
 
     # Force cleanup of ALL versions except current
     system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
@@ -61,6 +67,7 @@ class TinyScreenMonitor < Formula
     # Stop service
     system "brew", "services", "stop", name rescue nil
     sleep 1
+    cleanup_processes
     
     # Force cleanup
     system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
