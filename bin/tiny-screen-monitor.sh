@@ -160,6 +160,7 @@ while true; do
     echo $active_domain
 
     # Calculate current duration
+    current_timestamp=$(date +%s)
     if [[ -n "$previous_timestamp" ]]; then
         duration=$((current_timestamp - previous_timestamp))
     else
