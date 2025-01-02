@@ -1,8 +1,8 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev30.tar.gz"
-  sha256 "56df31e27d3d1ecf34a2c263a5aad5cc38f2d53906a4a43631fa5cc4ac65829f"
+  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev31.tar.gz"
+  sha256 "5b0aaa5df2cd0e85ad1bed64769b5e9322a99be3bbd400f4e255cba25d0f69ca"
   license "MIT"
 
   depends_on "curl"
@@ -41,12 +41,12 @@ class TinyScreenMonitor < Formula
 
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor"
+    run ["/bin/bash", opt_bin/"tiny-screen-monitor"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
-    log_path var/"log/tiny-screen-monitor/output.log"
-    error_log_path var/"log/tiny-screen-monitor/error.log"
-    environment_variables PATH: std_service_path_env
+    process_type :background
+    log_path "#{var}/log/tiny-screen-monitor/debug.log"
+    error_log_path "#{var}/log/tiny-screen-monitor/error.log"
   end
 
   def caveats
