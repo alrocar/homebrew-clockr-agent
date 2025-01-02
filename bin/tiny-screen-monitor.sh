@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Define lock file
+LOCK_FILE="/tmp/tiny-screen-monitor.lock"
+
+# Check if the script is already running
+if [ -f "$LOCK_FILE" ]; then
+    # Check if the process is actually running
+    OLD_PID=$(cat "$LOCK_FILE")
+    if ps -p "$OLD_PID" > /dev/null 2>&1; then
+        echo "Process is already running with PID $OLD_PID"
+        exit 1
+    else
+        # Process not running but lock file exists - remove it
+        rm -f "$LOCK_FILE"
+    fi
+fi
+
+# Create lock file with current PID
+echo $$ > "$LOCK_FILE"
+
+# Cleanup lock file on script exit
+trap "rm -f $LOCK_FILE" EXIT
+
 # Trap Ctrl+C and cleanup
 cleanup() {
     log "INFO" "Shutting down tiny-screen-monitor..."
@@ -63,22 +85,23 @@ while true; do
         status="locked"
     fi
 
-    # Get active app
-    active_app=$(osascript -e '
+    # Get active application and window title
+    active_app_info=$(osascript -e '
         tell application "System Events"
-            # First check if there are any active screens
-            set displayCount to do shell script "system_profiler SPDisplaysDataType | grep -c Resolution"
-            
-            if displayCount > "0" then
-                # If displays are active, get the frontmost app
-                get name of application processes whose frontmost is true
-            else
-                # If no displays are active, consider it locked
-                return ""
-            end if
+            set frontApp to first application process whose frontmost is true
+            set appName to name of frontApp
+            set windowTitle to ""
+            try
+                set windowTitle to name of first window of frontApp
+            end try
+            return appName & "|" & windowTitle
         end tell
-    ' 2>/dev/null)
-    echo $active_app
+    ')
+
+    # Split the result
+    active_app=$(echo "$active_app_info" | cut -d'|' -f1)
+    window_title=$(echo "$active_app_info" | cut -d'|' -f2)
+
     # Get URL if active app is a browser
     active_tab_url=""
     # List of known browsers
@@ -125,7 +148,7 @@ while true; do
     curl \
         -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
         -H "Authorization: Bearer $TSM_TB_TOKEN" \
-        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
+        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"],\"window_title\":\"$window_title\"}" \
         &
 
     end_time=$(date +%s)

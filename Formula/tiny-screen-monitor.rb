@@ -68,6 +68,10 @@ class TinyScreenMonitor < Formula
     rm Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
   end
 
+  def post_install
+    system "pkill", "-f", "tiny-screen-monitor" rescue nil
+  end
+
   test do
     system "#{bin}/tiny-screen-monitor", "--version"
   end
