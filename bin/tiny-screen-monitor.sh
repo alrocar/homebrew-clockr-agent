@@ -29,10 +29,10 @@ cleanup() {
                 -w "\n"
         fi
         
-        # Kill all processes in the group
-        kill -TERM -$$ 2>/dev/null
+        # Kill all processes in the group and exit immediately
+        kill -9 -$$ 2>/dev/null
         rm -f "$LOCK_FILE"
-        exit 0
+        kill -9 $$ 2>/dev/null
     fi
 }
 
