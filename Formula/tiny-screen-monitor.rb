@@ -1,8 +1,8 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev30.tar.gz"
-  sha256 "56df31e27d3d1ecf34a2c263a5aad5cc38f2d53906a4a43631fa5cc4ac65829f"
+  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev32.tar.gz"
+  sha256 "ec6c8489a2371782a4834ad35fc53f3c1eb4a2b841cc46e5cadca7effbca2a7a"
   license "MIT"
 
   depends_on "curl"
@@ -32,20 +32,29 @@ class TinyScreenMonitor < Formula
   end
 
   def post_install
-    # More thorough cleanup
-    system "pkill", "-f", "tiny-screen-monitor" rescue nil
-    system "pkill", "-f", "osascript.*System Events" rescue nil
-    sleep 2
+    # Stop any running instances
+    system "brew", "services", "stop", name rescue nil
+    sleep 1
+
+    # Find and kill all related processes
+    system "pkill", "-9", "-f", "tiny-screen-monitor" rescue nil
+    sleep 1
+    
+    # Clean lock file
     system "rm", "-f", "/tmp/tiny-screen-monitor.lock"
+    
+    # Let Homebrew handle the cleanup
+    system "brew", "cleanup", name rescue nil
   end
 
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor"
+    run [opt_bin/"tiny-screen-monitor"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
-    log_path var/"log/tiny-screen-monitor/output.log"
-    error_log_path var/"log/tiny-screen-monitor/error.log"
+    process_type :background
+    log_path "#{var}/log/tiny-screen-monitor/debug.log"
+    error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
   end
 
