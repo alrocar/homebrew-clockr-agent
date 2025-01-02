@@ -41,6 +41,9 @@ class TinyScreenMonitor < Formula
     
     # Let Homebrew handle the cleanup
     system "brew", "cleanup", name rescue nil
+    
+    # Restart the service
+    system "brew", "services", "restart", name rescue nil
   end
 
   service do
