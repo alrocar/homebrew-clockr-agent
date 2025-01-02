@@ -29,9 +29,17 @@ cleanup() {
                 -w "\n"
         fi
         
-        # Kill all processes in the group and exit immediately
-        kill -9 -$$ 2>/dev/null
+        # Kill all child processes first
+        pkill -P $$ 2>/dev/null
+        
+        # Remove lock file
         rm -f "$LOCK_FILE"
+        
+        # Kill ourselves with SIGTERM first
+        kill -TERM $$ 2>/dev/null || true
+        
+        # If we're still here after 1 second, force quit
+        sleep 1
         kill -9 $$ 2>/dev/null
     fi
 }
