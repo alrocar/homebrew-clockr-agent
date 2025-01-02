@@ -31,21 +31,10 @@ class TinyScreenMonitor < Formula
   end
 
   def setup_permanent_script
-    # Ensure var directory exists with proper permissions
-    system "sudo", "mkdir", "-p", "#{var}/tiny-screen-monitor"
-    system "sudo", "chown", ENV["USER"], "#{var}/tiny-screen-monitor"
-    system "sudo", "chmod", "755", "#{var}/tiny-screen-monitor"
-    
-    # Create symlink with full path verification
-    target_script = opt_bin/"tiny-screen-monitor.sh"
-    target_link = "#{var}/tiny-screen-monitor/tiny-screen-monitor.sh"
-    
-    if File.exist?(target_script)
-      system "cp", target_script, target_link
-      system "chmod", "+x", target_link
-    else
-      odie "Script not found: #{target_script}"
-    end
+    # Ensure log directory exists with proper permissions
+    system "sudo", "mkdir", "-p", "#{var}/log/tiny-screen-monitor"
+    system "sudo", "chown", ENV["USER"], "#{var}/log/tiny-screen-monitor"
+    system "sudo", "chmod", "755", "#{var}/log/tiny-screen-monitor"
   end
 
   def post_install
@@ -85,8 +74,8 @@ class TinyScreenMonitor < Formula
   end
 
   service do
-    name macos: "com.alrocar.tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor.sh"
+    name macos: "tiny-screen-monitor"
+    run opt_bin/"tiny-screen-monitor"
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
