@@ -1,8 +1,8 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev43.tar.gz"
-  sha256 "517f15ddadbb1d89951d584b755840138ddce48b5d99ff9c51bd0e911df9eaa6"
+  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev44.tar.gz"
+  sha256 "f9d022e330fd2fc7992078da946e83203974472cbe0c7a4a7cfc10c5e70752a1"
   license "MIT"
 
   depends_on "curl"
