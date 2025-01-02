@@ -31,6 +31,14 @@ class TinyScreenMonitor < Formula
     chmod 0755, var/"log/tiny-screen-monitor"
   end
 
+  def post_install
+    # More thorough cleanup
+    system "pkill", "-f", "tiny-screen-monitor" rescue nil
+    system "pkill", "-f", "osascript.*System Events" rescue nil
+    sleep 2
+    system "rm", "-f", "/tmp/tiny-screen-monitor.lock"
+  end
+
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
     run opt_bin/"tiny-screen-monitor"
