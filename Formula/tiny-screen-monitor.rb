@@ -39,6 +39,7 @@ class TinyScreenMonitor < Formula
 
   def cleanup_processes
     system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
     sleep 1
   end
 

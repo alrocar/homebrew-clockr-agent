@@ -29,6 +29,7 @@ cleanup() {
     
     # Kill any lingering osascript processes
     pkill -f "tiny-screen-monitor.sh" 2>/dev/null
+    pkill -f "tiny-screen-monitor.sh" 2>/dev/null
     pkill -f "osascript.*System Events" 2>/dev/null
     
     # Clean up files
