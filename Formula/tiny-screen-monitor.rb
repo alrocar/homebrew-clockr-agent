@@ -42,7 +42,7 @@ class TinyScreenMonitor < Formula
     target_link = "#{var}/tiny-screen-monitor/tiny-screen-monitor.sh"
     
     if File.exist?(target_script)
-      system "ln", "-sf", target_script, target_link
+      system "cp", target_script, target_link
       system "chmod", "+x", target_link
     else
       odie "Script not found: #{target_script}"
@@ -63,7 +63,7 @@ class TinyScreenMonitor < Formula
     # Ensure service directory exists
     system "mkdir", "-p", "#{ENV["HOME"]}/Library/LaunchAgents"
     
-    # Start service (don't use restart as it might fail)
+    # Start service
     system "brew", "services", "start", name rescue nil
   end
 
@@ -86,7 +86,8 @@ class TinyScreenMonitor < Formula
   end
 
   service do
-    run ["sh", "-c", "exec #{var}/tiny-screen-monitor/tiny-screen-monitor.sh"]
+    name macos: "com.alrocar.tiny-screen-monitor"
+    run opt_bin/"tiny-screen-monitor.sh"
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
