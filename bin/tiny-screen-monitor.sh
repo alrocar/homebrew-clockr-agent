@@ -1,5 +1,72 @@
 #!/bin/bash
 
+# Enable debug mode and output to both console and log file
+exec 1> >(tee -a "/opt/homebrew/var/log/tiny-screen-monitor/debug.log")
+exec 2>&1
+
+echo "=== Starting tiny-screen-monitor with debug logging ==="
+date
+
+# Enable verbose bash debugging
+set -x
+
+# Define lock file
+LOCK_FILE="/tmp/tiny-screen-monitor.lock"
+
+# More specific process checking
+check_running_processes() {
+    echo "Checking for other instances..."
+    # Get current PID and PPID (parent process ID)
+    CURRENT_PID=$$
+    PARENT_PID=$PPID
+    
+    # Find tiny-screen-monitor processes excluding:
+    # - current process
+    # - parent process
+    # - grep process
+    # - processes that are children of current process
+    RUNNING_PROCESSES=$(ps -ef | 
+        grep -E "tiny-screen-monitor(\.sh)?$" | 
+        grep -v grep | 
+        grep -v $CURRENT_PID | 
+        grep -v $PARENT_PID | 
+        grep -v "ppid=$CURRENT_PID")
+    
+    if [ ! -z "$RUNNING_PROCESSES" ]; then
+        echo "Other instances are running:"
+        echo "$RUNNING_PROCESSES"
+        echo "Terminating them..."
+        
+        # Extract PIDs and kill only those specific processes
+        echo "$RUNNING_PROCESSES" | awk '{print $2}' | xargs kill 2>/dev/null
+        sleep 1
+    else
+        echo "No other instances found."
+    fi
+}
+
+# Run process check at start
+check_running_processes
+
+# Check if the script is already running
+if [ -f "$LOCK_FILE" ]; then
+    # Check if the process is actually running
+    OLD_PID=$(cat "$LOCK_FILE")
+    if ps -p "$OLD_PID" > /dev/null 2>&1; then
+        echo "Process is already running with PID $OLD_PID"
+        exit 1
+    else
+        # Process not running but lock file exists - remove it
+        rm -f "$LOCK_FILE"
+    fi
+fi
+
+# Create lock file with current PID
+echo $$ > "$LOCK_FILE"
+
+# Cleanup lock file on script exit
+trap "rm -f $LOCK_FILE" EXIT
+
 # Trap Ctrl+C and cleanup
 cleanup() {
     log "INFO" "Shutting down tiny-screen-monitor..."
@@ -46,6 +113,38 @@ log() {
 # Source the display status checker from Homebrew's bin directory
 source "$BREW_PREFIX/bin/check_display.sh"
 
+check_and_request_permissions() {
+    echo "Checking System Events permissions..."
+    
+    # Try to access System Events
+    if ! osascript -e 'tell application "System Events" to get name of every process' 2>/dev/null; then
+        echo "ERROR: Missing System Events permissions"
+        
+        # Show notification to user
+        osascript -e 'display notification "Please grant Accessibility permissions to tiny-screen-monitor in System Settings → Privacy & Security → Accessibility" with title "tiny-screen-monitor needs permissions"'
+        
+        # Open System Settings to the right place
+        open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        
+        echo "Please grant permissions to:"
+        echo "1. /opt/homebrew/bin/tiny-screen-monitor"
+        echo "2. /opt/homebrew/opt/tiny-screen-monitor/bin/tiny-screen-monitor"
+        
+        # Wait for permissions
+        while ! osascript -e 'tell application "System Events" to get name of every process' 2>/dev/null; do
+            echo "Waiting for permissions..."
+            sleep 5
+        done
+        
+        echo "Permissions granted!"
+    fi
+}
+
+# Run permission check before starting
+check_and_request_permissions
+
+echo "Starting main monitoring loop..."
+
 while true; do
     source "$CONFIG_FILE" || {
         log "ERROR" "Failed to source configuration file"
@@ -63,22 +162,23 @@ while true; do
         status="locked"
     fi
 
-    # Get active app
-    active_app=$(osascript -e '
+    # Get active application and window title
+    active_app_info=$(osascript -e '
         tell application "System Events"
-            # First check if there are any active screens
-            set displayCount to do shell script "system_profiler SPDisplaysDataType | grep -c Resolution"
-            
-            if displayCount > "0" then
-                # If displays are active, get the frontmost app
-                get name of application processes whose frontmost is true
-            else
-                # If no displays are active, consider it locked
-                return ""
-            end if
+            set frontApp to first application process whose frontmost is true
+            set appName to name of frontApp
+            set windowTitle to ""
+            try
+                set windowTitle to name of first window of frontApp
+            end try
+            return appName & "|" & windowTitle
         end tell
-    ' 2>/dev/null)
-    echo $active_app
+    ')
+
+    # Split the result
+    active_app=$(echo "$active_app_info" | cut -d'|' -f1)
+    window_title=$(echo "$active_app_info" | cut -d'|' -f2)
+
     # Get URL if active app is a browser
     active_tab_url=""
     # List of known browsers
@@ -125,7 +225,7 @@ while true; do
     curl \
         -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
         -H "Authorization: Bearer $TSM_TB_TOKEN" \
-        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
+        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"],\"window_title\":\"$window_title\"}" \
         &
 
     end_time=$(date +%s)

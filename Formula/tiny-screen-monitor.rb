@@ -1,14 +1,15 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev20.tar.gz"
-  sha256 "f3430d402336da761fbc8ef27f0a75fc87a8af16abcf53223c857f3a87e2bb23"
+  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev23.tar.gz"
+  sha256 "77a7f27f69422c320d19df54149b95c6c3b3af29fda493d031f0b26b3d5b1978"
   license "MIT"
 
   depends_on "curl"
 
   def install
-    bin.install "bin/tiny-screen-monitor.sh"
+    bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
+    rm_rf "#{opt_prefix}/bin/tiny-screen-monitor"
     
     # Compile and install the app wrapper
     system "swiftc", 
@@ -39,24 +40,23 @@ class TinyScreenMonitor < Formula
     log_path var/"log/tiny-screen-monitor/output.log"
     error_log_path var/"log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
+    run_type :immediate
+    process_type :background
   end
 
   def caveats
     <<~EOS
-      To complete the installation:
-
-      1. Edit your configuration file:
-         $EDITOR #{etc}/tiny-screen-monitor/tiny-screen-monitor.cfg
-
-      2. Ensure you have granted necessary permissions:
-         - Accessibility access for monitoring active applications
-         - Screen Recording permission for capturing browser URLs
-
-      3. Start the service:
-         brew services start tiny-screen-monitor
-
-      Or to start manually:
-         tiny-screen-monitor
+      To use tiny-screen-monitor, you need to:
+      
+      1. Grant Accessibility permissions in System Settings:
+         System Settings → Privacy & Security → Accessibility
+         
+      2. Add and enable BOTH:
+         - /opt/homebrew/bin/tiny-screen-monitor
+         - /opt/homebrew/opt/tiny-screen-monitor/bin/tiny-screen-monitor
+         
+      3. Restart the service after granting permissions:
+         brew services restart tiny-screen-monitor
     EOS
   end
 
@@ -66,6 +66,16 @@ class TinyScreenMonitor < Formula
 
     # Optionally remove config file (uncomment if desired)
     rm Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
+  end
+
+  def post_install
+    # More aggressive process cleanup
+    system "pkill", "-f", "tiny-screen-monitor" rescue nil
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    sleep 2  # Give processes time to terminate
+    
+    # Clean up any lingering lock files
+    system "rm", "-f", "/tmp/tiny-screen-monitor.lock" rescue nil
   end
 
   test do
