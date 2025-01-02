@@ -8,7 +8,7 @@ cleanup() {
     log "INFO" "Shutting down tiny-screen-monitor..."
     
     # Send final event if we have previous state
-    if [[ -n "$previous_timestamp" ]]; then
+    if [[ -n "$previous_timestamp" && $duration -gt 0 ]]; then
         current_timestamp=$(date +%s)
         duration=$((current_timestamp - previous_timestamp))
         
@@ -18,6 +18,7 @@ cleanup() {
             -H "Authorization: Bearer $TSM_TB_TOKEN" \
             -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$active_app_name\",\"window_title\":\"$window_title\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
             -w "\n"
+        duration=0
     fi
     
     # Kill all processes in the group
@@ -71,6 +72,9 @@ previous_app=""
 previous_window=""
 previous_status=""
 previous_timestamp=""
+previous_domain=""
+previous_tab_url=""
+HOUR_IN_SECONDS=3600
 MAX_DURATION=60
 
 while true; do
@@ -78,7 +82,7 @@ while true; do
         log "ERROR" "Failed to source configuration file"
         exit 1
     }
-    start_time=$(date +%s.%N)
+    # start_time=$(date +%s.%N)
     current_date=$(date -u +'%Y-%m-%d %H:%M:%S')
 
     # Use the imported check_display_status function
@@ -168,42 +172,46 @@ while true; do
         previous_timestamp="$current_timestamp"
     fi
     
-    # Send event if:
-    # 1. State changed OR
-    # 2. It's been more than an hour
+    # Send event if state changed or hourly update
     if [[ "$previous_app" != "$active_app_name" || 
           "$previous_window" != "$window_title" || 
           "$previous_status" != "$status" || 
+          "$previous_domain" != "$active_domain" ||
+          "$previous_tab_url" != "$active_tab_url" ||
           $duration -ge $MAX_DURATION ]]; then
         
-        # Send the event with current duration
-        curl \
-            -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
-            -H "Authorization: Bearer $TSM_TB_TOKEN" \
-            -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$active_app_name\",\"window_title\":\"$window_title\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
-            &
+        if [[ -n "$previous_timestamp" && $duration -gt 0 ]]; then
+            # Send the previous state with its duration
+            curl \
+                -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
+                -H "Authorization: Bearer $TSM_TB_TOKEN" \
+                -d "{\"timestamp\":\"$current_date\",\"status\":\"$previous_status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$previous_app\",\"window_title\":\"$previous_window\",\"domains\":[\"$previous_domain\"],\"tabs\":[\"$previous_tab_url\"]}" \
+                &
+        fi
             
-        # Reset timestamp and update previous state
+        # Reset timestamp and update all previous state
         previous_timestamp="$current_timestamp"
         previous_app="$active_app_name"
         previous_window="$window_title"
         previous_status="$status"
+        previous_domain="$active_domain"
+        previous_tab_url="$active_tab_url"
     fi
     
-    end_time=$(date +%s.%N)
-    execution_time=$(echo "$end_time - $start_time" | bc)
-    target_interval=2.0
-    sleep_time=$(echo "$target_interval - $execution_time" | bc)
+    # end_time=$(date +%s.%N)
+    # execution_time=$(echo "$end_time - $start_time" | bc)
+    # target_interval=2.0
+    # sleep_time=$(echo "$target_interval - $execution_time" | bc)
 
-    echo "Sleep time: $sleep_time"
-    echo "Next start time: $next_start_time"
-    echo "End time: $end_time"
-    echo "Start time: $start_time"
-    echo "Execution time: $execution_time"
+    # echo "Sleep time: $sleep_time"
+    # echo "Next start time: $next_start_time"
+    # echo "End time: $end_time"
+    # echo "Start time: $start_time"
+    # echo "Execution time: $execution_time"
     
-    if (( $(echo "$sleep_time > 0" | bc -l) )); then
-        sleep $sleep_time
-    else
-        log "WARNING" "Execution time ($execution_time seconds) exceeded target interval ($target_interval seconds)"
-    fi
+    # if (( $(echo "$sleep_time > 0" | bc -l) )); then
+    #     sleep $sleep_time
+    # else
+    #     log "WARNING" "Execution time ($execution_time seconds) exceeded target interval ($target_interval seconds)"
+    # fi
 done
