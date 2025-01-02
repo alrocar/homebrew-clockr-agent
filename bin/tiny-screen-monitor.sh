@@ -3,6 +3,16 @@
 # Define lock file
 LOCK_FILE="/tmp/tiny-screen-monitor.lock"
 
+# Check for other instances using the process name
+RUNNING_PROCESSES=$(pgrep -fl tiny-screen-monitor | grep -v $$)
+if [ ! -z "$RUNNING_PROCESSES" ]; then
+    echo "Other instances are running:"
+    echo "$RUNNING_PROCESSES"
+    echo "Terminating them..."
+    pkill -f tiny-screen-monitor
+    sleep 1
+fi
+
 # Check if the script is already running
 if [ -f "$LOCK_FILE" ]; then
     # Check if the process is actually running

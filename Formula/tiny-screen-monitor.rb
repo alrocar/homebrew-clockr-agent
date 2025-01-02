@@ -8,7 +8,7 @@ class TinyScreenMonitor < Formula
   depends_on "curl"
 
   def install
-    bin.install "bin/tiny-screen-monitor.sh"
+    bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
     
     # Compile and install the app wrapper
     system "swiftc", 
@@ -43,20 +43,8 @@ class TinyScreenMonitor < Formula
 
   def caveats
     <<~EOS
-      To complete the installation:
-
-      1. Edit your configuration file:
-         $EDITOR #{etc}/tiny-screen-monitor/tiny-screen-monitor.cfg
-
-      2. Ensure you have granted necessary permissions:
-         - Accessibility access for monitoring active applications
-         - Screen Recording permission for capturing browser URLs
-
-      3. Start the service:
-         brew services start tiny-screen-monitor
-
-      Or to start manually:
-         tiny-screen-monitor
+      To start tiny-screen-monitor, run:
+        tiny-screen-monitor
     EOS
   end
 
@@ -69,7 +57,10 @@ class TinyScreenMonitor < Formula
   end
 
   def post_install
+    # Kill all instances of tiny-screen-monitor
     system "pkill", "-f", "tiny-screen-monitor" rescue nil
+    # Add a small delay to ensure processes are terminated
+    sleep 1
   end
 
   test do
