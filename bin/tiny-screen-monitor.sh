@@ -64,7 +64,20 @@ while true; do
     fi
 
     # Get active app
-    active_app=$(osascript -e 'tell application "System Events" to get name of application processes whose frontmost is true' 2>/dev/null)
+    active_app=$(osascript -e '
+        tell application "System Events"
+            # First check if there are any active screens
+            set displayCount to do shell script "system_profiler SPDisplaysDataType | grep -c Resolution"
+            
+            if displayCount > "0" then
+                # If displays are active, get the frontmost app
+                get name of application processes whose frontmost is true
+            else
+                # If no displays are active, consider it locked
+                return ""
+            end if
+        end tell
+    ' 2>/dev/null)
     echo $active_app
     # Get URL if active app is a browser
     active_tab_url=""

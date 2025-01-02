@@ -32,9 +32,16 @@ check_display_status() {
         idle_time=$(ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print $NF/1000000000; exit}')
     fi
 
+    # Check lid state first
     if ioreg -r -k AppleClamshellState -d 4 | grep -q '"AppleClamshellState" = Yes'; then
-        echo "Status: LOCKED (laptop lid is closed)"
-        return 1
+        # Lid is closed, check for external displays
+        display_count=$(system_profiler SPDisplaysDataType | grep -c Resolution)
+        if [ "$display_count" -eq 0 ]; then
+            echo "Status: LOCKED (laptop lid is closed, no external display)"
+            return 1
+        fi
+        # If external display is connected, continue with lock checks
+        # Don't return here, fall through to check lock status
     fi
     
     if [ "$lock_state" = "missing value" ]; then
