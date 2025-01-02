@@ -58,8 +58,6 @@ class TinyScreenMonitor < Formula
     log_path "#{var}/log/tiny-screen-monitor/debug.log"
     error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
-    # Add PID file for better process tracking
-    pid_file "#{var}/run/tiny-screen-monitor.pid"
   end
 
   def caveats
