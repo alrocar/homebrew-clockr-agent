@@ -1,48 +1,42 @@
 #!/bin/bash
 
-# Set up process group and ensure child processes are killed
+# Enable job control and process group management
 set -m
+
+# Flag to prevent multiple cleanup calls
+CLEANUP_DONE=0
 
 # Store PID in a file for service management
 PID_FILE="/opt/homebrew/var/run/tiny-screen-monitor.pid"
 echo $$ > "$PID_FILE"
 
 cleanup() {
-    log "INFO" "Shutting down tiny-screen-monitor..."
-    
-    # Send final event if we have previous state
-    if [[ -n "$previous_timestamp" && $duration -gt 0 ]]; then
-        current_timestamp=$(date +%s)
-        duration=$((current_timestamp - previous_timestamp))
+    # Only run cleanup once
+    if [ "$CLEANUP_DONE" -eq 0 ]; then
+        CLEANUP_DONE=1
+        log "INFO" "Shutting down tiny-screen-monitor..."
         
-        # Send the final event with current duration
-        curl \
-            -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
-            -H "Authorization: Bearer $TSM_TB_TOKEN" \
-            -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$active_app_name\",\"window_title\":\"$window_title\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
-            -w "\n"
-        duration=0
+        # Send final event if we have previous state
+        if [[ -n "$previous_timestamp" ]]; then
+            current_timestamp=$(date +%s)
+            duration=$((current_timestamp - previous_timestamp))
+            
+            # Send the final event with current duration
+            curl \
+                -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
+                -H "Authorization: Bearer $TSM_TB_TOKEN" \
+                -d "{\"timestamp\":\"$current_date\",\"status\":\"$previous_status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$previous_app\",\"window_title\":\"$previous_window\",\"domains\":[\"$previous_domain\"],\"tabs\":[\"$previous_tab_url\"]}" \
+                -w "\n"
+        fi
+        
+        # Kill all processes in the group
+        kill -TERM -$$ 2>/dev/null
+        rm -f "$LOCK_FILE"
+        exit 0
     fi
-    
-    # Kill all child processes
-    pkill -P $$ 2>/dev/null
-    
-    # Kill any lingering osascript processes
-    pkill -f "tiny-screen-monitor.sh" 2>/dev/null
-    pkill -f "tiny-screen-monitor.sh" 2>/dev/null
-    pkill -f "osascript.*System Events" 2>/dev/null
-    
-    # Clean up files
-    rm -f "$LOCK_FILE"
-    rm -f "$PID_FILE"
-    
-    # Kill the process group
-    kill -TERM -$$ 2>/dev/null
-    exit 0
 }
 
-# Trap all termination signals
-trap cleanup SIGINT SIGTERM EXIT SIGHUP
+trap cleanup SIGINT SIGTERM EXIT
 
 previous_state="uninitialized"
 
