@@ -38,7 +38,11 @@ class TinyScreenMonitor < Formula
   end
 
   def cleanup_processes
-    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    # Stop the service first
+    system "brew", "services", "stop", name rescue nil
+    sleep 1
+    
+    # Kill any remaining shell script processes
     system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
     sleep 1
   end
@@ -83,13 +87,49 @@ class TinyScreenMonitor < Formula
 
   service do
     name macos: "tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor"
+    run [opt_bin/"tiny-screen-monitor", "--kill-on-stop"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
     log_path "#{var}/log/tiny-screen-monitor/debug.log"
     error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
+  end
+
+  # Add plist options to handle process cleanup
+  plist_options manual: "tiny-screen-monitor"
+
+  def plist
+    <<~EOS
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>KeepAlive</key>
+        <true/>
+        <key>Label</key>
+        <string>#{plist_name}</string>
+        <key>ProgramArguments</key>
+        <array>
+          <string>#{opt_bin}/tiny-screen-monitor</string>
+          <string>--kill-on-stop</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>WorkingDirectory</key>
+        <string>#{HOMEBREW_PREFIX}</string>
+        <key>StandardOutPath</key>
+        <string>#{var}/log/tiny-screen-monitor/debug.log</string>
+        <key>StandardErrorPath</key>
+        <string>#{var}/log/tiny-screen-monitor/error.log</string>
+        <key>EnvironmentVariables</key>
+        <dict>
+          <key>PATH</key>
+          <string>#{HOMEBREW_PREFIX}/bin:#{HOMEBREW_PREFIX}/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        </dict>
+      </dict>
+      </plist>
+    EOS
   end
 
   def caveats
