@@ -1,8 +1,8 @@
 class TinyScreenMonitor < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev55.tar.gz"
-  sha256 "0a261a9f107d87b34486f67b6e83770f2a4962720b896e95009e2362caa380f3"
+  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev53.tar.gz"
+  sha256 "f55d14aab4334be34833f401a8c38c3abe45ce682929329ff8c17c0aec383386"
   license "MIT"
 
   depends_on "curl"
@@ -38,11 +38,7 @@ class TinyScreenMonitor < Formula
   end
 
   def cleanup_processes
-    # Stop the service first
-    system "brew", "services", "stop", name rescue nil
-    sleep 1
-    
-    # Kill any remaining shell script processes
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
     system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
     sleep 1
   end
@@ -94,38 +90,6 @@ class TinyScreenMonitor < Formula
     log_path "#{var}/log/tiny-screen-monitor/debug.log"
     error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
-  end
-
-  def plist
-    <<~EOS
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-      <dict>
-        <key>KeepAlive</key>
-        <true/>
-        <key>Label</key>
-        <string>#{plist_name}</string>
-        <key>ProgramArguments</key>
-        <array>
-          <string>#{opt_bin}/tiny-screen-monitor</string>
-        </array>
-        <key>RunAtLoad</key>
-        <true/>
-        <key>WorkingDirectory</key>
-        <string>#{HOMEBREW_PREFIX}</string>
-        <key>StandardOutPath</key>
-        <string>#{var}/log/tiny-screen-monitor/debug.log</string>
-        <key>StandardErrorPath</key>
-        <string>#{var}/log/tiny-screen-monitor/error.log</string>
-        <key>EnvironmentVariables</key>
-        <dict>
-          <key>PATH</key>
-          <string>#{HOMEBREW_PREFIX}/bin:#{HOMEBREW_PREFIX}/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        </dict>
-      </dict>
-      </plist>
-    EOS
   end
 
   def caveats
