@@ -32,11 +32,15 @@ class TinyScreenMonitor < Formula
   end
 
   def post_install
-    # More thorough cleanup
-    system "pkill", "-f", "tiny-screen-monitor" rescue nil
-    system "pkill", "-f", "osascript.*System Events" rescue nil
+    # Stop any running instances
+    system "brew", "services", "stop", name rescue nil
     sleep 2
+    
+    # Clean lock file
     system "rm", "-f", "/tmp/tiny-screen-monitor.lock"
+    
+    # Let Homebrew handle the cleanup
+    system "brew", "cleanup", name rescue nil
   end
 
   service do
