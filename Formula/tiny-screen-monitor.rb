@@ -9,8 +9,7 @@ class TinyScreenMonitor < Formula
 
   def install
     bin.install "bin/tiny-screen-monitor.sh"
-    
-    # Compile and install the app wrapper
+
     system "swiftc", 
            "-framework", "Cocoa",
            "-o", bin/"tiny-screen-monitor",
