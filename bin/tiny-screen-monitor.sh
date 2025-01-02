@@ -70,15 +70,25 @@ while true; do
             set displayCount to do shell script "system_profiler SPDisplaysDataType | grep -c Resolution"
             
             if displayCount > "0" then
-                # If displays are active, get the frontmost app
-                get name of application processes whose frontmost is true
+                # If displays are active, get the frontmost app and window title
+                set frontApp to first application process whose frontmost is true
+                set appName to name of frontApp
+                set windowTitle to ""
+                try
+                    set windowTitle to name of first window of frontApp
+                end try
+                return appName & "|" & windowTitle
             else
                 # If no displays are active, consider it locked
                 return ""
             end if
         end tell
     ' 2>/dev/null)
-    echo $active_app
+
+    # Split the result into app and window title
+    active_app_name=$(echo "$active_app" | cut -d'|' -f1)
+    window_title=$(echo "$active_app" | cut -d'|' -f2)
+
     # Get URL if active app is a browser
     active_tab_url=""
     # List of known browsers
@@ -98,16 +108,16 @@ while true; do
     )
     
     # Check if active_app is in the browsers list (case-insensitive)
-    active_app_lower=$(echo "$active_app" | tr '[:upper:]' '[:lower:]')
+    active_app_lower=$(echo "$active_app_name" | tr '[:upper:]' '[:lower:]')
     for browser in "${browsers[@]}"; do
         browser_lower=$(echo "$browser" | tr '[:upper:]' '[:lower:]')
         if [ "$active_app_lower" = "$browser_lower" ]; then
             case "$browser" in
                 "Arc"|"Google Chrome"|"Opera"|"Brave Browser"|"Microsoft Edge"|"Vivaldi"|"Chromium")
-                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app\" then tell application \"$active_app\" to get URL of active tab of window 1" 2>/dev/null)
+                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app_name\" then tell application \"$active_app_name\" to get URL of active tab of window 1" 2>/dev/null)
                     ;;
                 *)
-                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app\" then tell application \"$active_app\" to get URL of current tab of front window" 2>/dev/null)
+                    active_tab_url=$(osascript -e "tell application \"System Events\" to if (name of first application process whose frontmost is true) is \"$active_app_name\" then tell application \"$active_app_name\" to get URL of current tab of front window" 2>/dev/null)
                     ;;
             esac
             break
@@ -125,7 +135,19 @@ while true; do
     curl \
         -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
         -H "Authorization: Bearer $TSM_TB_TOKEN" \
-        -d "{\"timestamp\":\"$current_date\",\"status\":\"$status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$TSM_SCREEN_SLEEP_TIME,\"app\":\"$active_app\",\"domains\":[\"$active_domain\"],\"tabs\":[\"$active_tab_url\"]}" \
+        -d "$(cat <<EOF
+{
+  "timestamp": "$current_date",
+  "status": "$status", 
+  "user": "$TSM_SCREEN_USER",
+  "duration": $TSM_SCREEN_SLEEP_TIME,
+  "app": "$active_app_name",
+  "window_title": "$window_title",
+  "domains": ["$active_domain"],
+  "tabs": ["$active_tab_url"]
+}
+EOF
+)" \
         &
 
     end_time=$(date +%s)
