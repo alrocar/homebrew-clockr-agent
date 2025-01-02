@@ -9,6 +9,7 @@ class TinyScreenMonitor < Formula
 
   def install
     bin.install "bin/tiny-screen-monitor.sh" => "tiny-screen-monitor"
+    rm_rf "#{opt_prefix}/bin/tiny-screen-monitor"
     
     # Compile and install the app wrapper
     system "swiftc", 
@@ -39,12 +40,23 @@ class TinyScreenMonitor < Formula
     log_path var/"log/tiny-screen-monitor/output.log"
     error_log_path var/"log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
+    run_type :immediate
+    process_type :background
   end
 
   def caveats
     <<~EOS
-      To start tiny-screen-monitor, run:
-        tiny-screen-monitor
+      To use tiny-screen-monitor, you need to:
+      
+      1. Grant Accessibility permissions in System Settings:
+         System Settings → Privacy & Security → Accessibility
+         
+      2. Add and enable BOTH:
+         - /opt/homebrew/bin/tiny-screen-monitor
+         - /opt/homebrew/opt/tiny-screen-monitor/bin/tiny-screen-monitor
+         
+      3. Restart the service after granting permissions:
+         brew services restart tiny-screen-monitor
     EOS
   end
 
@@ -57,10 +69,13 @@ class TinyScreenMonitor < Formula
   end
 
   def post_install
-    # Kill all instances of tiny-screen-monitor
+    # More aggressive process cleanup
     system "pkill", "-f", "tiny-screen-monitor" rescue nil
-    # Add a small delay to ensure processes are terminated
-    sleep 1
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    sleep 2  # Give processes time to terminate
+    
+    # Clean up any lingering lock files
+    system "rm", "-f", "/tmp/tiny-screen-monitor.lock" rescue nil
   end
 
   test do

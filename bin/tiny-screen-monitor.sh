@@ -1,17 +1,52 @@
 #!/bin/bash
 
+# Enable debug mode and output to both console and log file
+exec 1> >(tee -a "/opt/homebrew/var/log/tiny-screen-monitor/debug.log")
+exec 2>&1
+
+echo "=== Starting tiny-screen-monitor with debug logging ==="
+date
+
+# Enable verbose bash debugging
+set -x
+
 # Define lock file
 LOCK_FILE="/tmp/tiny-screen-monitor.lock"
 
-# Check for other instances using the process name
-RUNNING_PROCESSES=$(pgrep -fl tiny-screen-monitor | grep -v $$)
-if [ ! -z "$RUNNING_PROCESSES" ]; then
-    echo "Other instances are running:"
-    echo "$RUNNING_PROCESSES"
-    echo "Terminating them..."
-    pkill -f tiny-screen-monitor
-    sleep 1
-fi
+# More specific process checking
+check_running_processes() {
+    echo "Checking for other instances..."
+    # Get current PID and PPID (parent process ID)
+    CURRENT_PID=$$
+    PARENT_PID=$PPID
+    
+    # Find tiny-screen-monitor processes excluding:
+    # - current process
+    # - parent process
+    # - grep process
+    # - processes that are children of current process
+    RUNNING_PROCESSES=$(ps -ef | 
+        grep -E "tiny-screen-monitor(\.sh)?$" | 
+        grep -v grep | 
+        grep -v $CURRENT_PID | 
+        grep -v $PARENT_PID | 
+        grep -v "ppid=$CURRENT_PID")
+    
+    if [ ! -z "$RUNNING_PROCESSES" ]; then
+        echo "Other instances are running:"
+        echo "$RUNNING_PROCESSES"
+        echo "Terminating them..."
+        
+        # Extract PIDs and kill only those specific processes
+        echo "$RUNNING_PROCESSES" | awk '{print $2}' | xargs kill 2>/dev/null
+        sleep 1
+    else
+        echo "No other instances found."
+    fi
+}
+
+# Run process check at start
+check_running_processes
 
 # Check if the script is already running
 if [ -f "$LOCK_FILE" ]; then
@@ -77,6 +112,38 @@ log() {
 
 # Source the display status checker from Homebrew's bin directory
 source "$BREW_PREFIX/bin/check_display.sh"
+
+check_and_request_permissions() {
+    echo "Checking System Events permissions..."
+    
+    # Try to access System Events
+    if ! osascript -e 'tell application "System Events" to get name of every process' 2>/dev/null; then
+        echo "ERROR: Missing System Events permissions"
+        
+        # Show notification to user
+        osascript -e 'display notification "Please grant Accessibility permissions to tiny-screen-monitor in System Settings → Privacy & Security → Accessibility" with title "tiny-screen-monitor needs permissions"'
+        
+        # Open System Settings to the right place
+        open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        
+        echo "Please grant permissions to:"
+        echo "1. /opt/homebrew/bin/tiny-screen-monitor"
+        echo "2. /opt/homebrew/opt/tiny-screen-monitor/bin/tiny-screen-monitor"
+        
+        # Wait for permissions
+        while ! osascript -e 'tell application "System Events" to get name of every process' 2>/dev/null; do
+            echo "Waiting for permissions..."
+            sleep 5
+        done
+        
+        echo "Permissions granted!"
+    fi
+}
+
+# Run permission check before starting
+check_and_request_permissions
+
+echo "Starting main monitoring loop..."
 
 while true; do
     source "$CONFIG_FILE" || {
