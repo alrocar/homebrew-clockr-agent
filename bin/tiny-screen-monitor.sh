@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# Set up process group
+# Set up process group and ensure child processes are killed
 set -m
-trap 'kill -TERM -$$' EXIT SIGINT SIGTERM
+
+# Store PID in a file for service management
+PID_FILE="/opt/homebrew/var/run/tiny-screen-monitor.pid"
+echo $$ > "$PID_FILE"
 
 cleanup() {
     log "INFO" "Shutting down tiny-screen-monitor..."
@@ -21,13 +24,23 @@ cleanup() {
         duration=0
     fi
     
-    # Kill all processes in the group
-    kill -TERM -$$ 2>/dev/null
+    # Kill all child processes
+    pkill -P $$ 2>/dev/null
+    
+    # Kill any lingering osascript processes
+    pkill -f "osascript.*System Events" 2>/dev/null
+    
+    # Clean up files
     rm -f "$LOCK_FILE"
+    rm -f "$PID_FILE"
+    
+    # Kill the process group
+    kill -TERM -$$ 2>/dev/null
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM EXIT
+# Trap all termination signals
+trap cleanup SIGINT SIGTERM EXIT SIGHUP
 
 previous_state="uninitialized"
 

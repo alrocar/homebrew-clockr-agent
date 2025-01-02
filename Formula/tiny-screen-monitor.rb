@@ -36,14 +36,16 @@ class TinyScreenMonitor < Formula
     system "brew", "services", "stop", name rescue nil
     sleep 1
 
-    # Find and kill all related processes
-    system "pkill", "-9", "-f", "tiny-screen-monitor" rescue nil
+    # More thorough process cleanup
+    system "pkill", "-f", "#{opt_bin}/tiny-screen-monitor" rescue nil
+    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    system "pkill", "-f", "osascript.*System Events" rescue nil
     sleep 1
     
     # Clean lock file
     system "rm", "-f", "/tmp/tiny-screen-monitor.lock"
+    system "rm", "-f", "#{var}/run/tiny-screen-monitor.pid"
     
-    # Let Homebrew handle the cleanup
     system "brew", "cleanup", name rescue nil
   end
 
@@ -56,6 +58,8 @@ class TinyScreenMonitor < Formula
     log_path "#{var}/log/tiny-screen-monitor/debug.log"
     error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
+    # Add PID file for better process tracking
+    pid_file "#{var}/run/tiny-screen-monitor.pid"
   end
 
   def caveats
