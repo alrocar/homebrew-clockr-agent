@@ -32,26 +32,30 @@ class TinyScreenMonitor < Formula
   end
 
   def post_install
-    # Stop any running instances
+    # Create a permanent location for permissions
+    system "mkdir", "-p", "#{HOMEBREW_PREFIX}/var/tiny-screen-monitor"
+    system "ln", "-sf", opt_bin/"tiny-screen-monitor", "#{HOMEBREW_PREFIX}/var/tiny-screen-monitor/tiny-screen-monitor"
+    
+    # Stop service
     system "brew", "services", "stop", name rescue nil
     sleep 1
 
-    # More thorough process cleanup
-    system "pkill", "-f", "#{opt_bin}/tiny-screen-monitor" rescue nil
-    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
-    system "pkill", "-f", "osascript.*System Events" rescue nil
-    sleep 1
+    # Force cleanup of ALL versions except current
+    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
     
-    # Clean lock file
-    system "rm", "-f", "/tmp/tiny-screen-monitor.lock"
-    system "rm", "-f", "#{var}/run/tiny-screen-monitor.pid"
-    
+    # Run brew cleanup as well
+    system "brew", "cleanup", name rescue nil
+  end
+
+  def post_upgrade
+    # Force cleanup on upgrade too
+    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
     system "brew", "cleanup", name rescue nil
   end
 
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
-    run ["sh", "-c", "exec #{opt_bin}/tiny-screen-monitor.sh"]
+    run ["sh", "-c", "exec #{HOMEBREW_PREFIX}/var/tiny-screen-monitor/tiny-screen-monitor"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
