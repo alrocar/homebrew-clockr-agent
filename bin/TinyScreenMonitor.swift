@@ -33,12 +33,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSLog("Shell script terminated with status: \(task.terminationStatus)")
             
             // Kill entire process group
-            if let pid = self.task.processIdentifier {
-                NSLog("Killing process group \(-pid)")
-                kill(-pid, SIGTERM)
-                Thread.sleep(forTimeInterval: 0.5)
-                kill(-pid, SIGKILL)
-            }
+            let pid = self.task.processIdentifier
+            NSLog("Killing process group \(-pid)")
+            kill(-pid, SIGTERM)
+            Thread.sleep(forTimeInterval: 0.5)
+            kill(-pid, SIGKILL)
             
             NSApplication.shared.terminate(nil)
         }
@@ -50,12 +49,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSLog("Application terminating, cleaning up...")
         
         // Kill the entire process group
-        if let pid = task.processIdentifier {
-            NSLog("Killing process group \(-pid)")
-            kill(-pid, SIGTERM)
-            Thread.sleep(forTimeInterval: 0.5)
-            kill(-pid, SIGKILL)
-        }
+        let pid = task.processIdentifier
+        NSLog("Killing process group \(-pid)")
+        kill(-pid, SIGTERM)
+        Thread.sleep(forTimeInterval: 0.5)
+        kill(-pid, SIGKILL)
         
         // Terminate the main task
         task.terminate()
