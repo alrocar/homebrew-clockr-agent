@@ -75,7 +75,7 @@ class TinyScreenMonitor < Formula
 
   service do
     name macos: "tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor"
+    run ["/bin/bash", "-c", "exec #{opt_bin}/tiny-screen-monitor.sh"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
