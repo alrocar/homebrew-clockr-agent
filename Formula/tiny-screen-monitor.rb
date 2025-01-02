@@ -87,7 +87,7 @@ class TinyScreenMonitor < Formula
 
   service do
     name macos: "tiny-screen-monitor"
-    run [opt_bin/"tiny-screen-monitor", "--kill-on-stop"]
+    run opt_bin/"tiny-screen-monitor"
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
@@ -95,9 +95,6 @@ class TinyScreenMonitor < Formula
     error_log_path "#{var}/log/tiny-screen-monitor/error.log"
     environment_variables PATH: std_service_path_env
   end
-
-  # Add plist options to handle process cleanup
-  plist_options manual: "tiny-screen-monitor"
 
   def plist
     <<~EOS
@@ -112,7 +109,6 @@ class TinyScreenMonitor < Formula
         <key>ProgramArguments</key>
         <array>
           <string>#{opt_bin}/tiny-screen-monitor</string>
-          <string>--kill-on-stop</string>
         </array>
         <key>RunAtLoad</key>
         <true/>
