@@ -31,10 +31,24 @@ class TinyScreenMonitor < Formula
     chmod 0755, var/"log/tiny-screen-monitor"
   end
 
+  def setup_permanent_script
+    # Create directories with proper permissions
+    system "mkdir", "-p", "#{var}/tiny-screen-monitor"
+    system "chmod", "755", "#{var}/tiny-screen-monitor"
+    
+    # Create symlink with full path verification
+    target_script = opt_bin/"tiny-screen-monitor.sh"
+    target_link = "#{var}/tiny-screen-monitor/tiny-screen-monitor.sh"
+    
+    if File.exist?(target_script)
+      system "ln", "-sf", target_script, target_link
+    else
+      odie "Script not found: #{target_script}"
+    end
+  end
+
   def post_install
-    # Create a permanent location for permissions
-    system "mkdir", "-p", "#{HOMEBREW_PREFIX}/var/tiny-screen-monitor"
-    system "ln", "-sf", opt_bin/"tiny-screen-monitor", "#{HOMEBREW_PREFIX}/var/tiny-screen-monitor/tiny-screen-monitor"
+    setup_permanent_script
     
     # Stop service
     system "brew", "services", "stop", name rescue nil
@@ -42,20 +56,30 @@ class TinyScreenMonitor < Formula
 
     # Force cleanup of ALL versions except current
     system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
-    
-    # Run brew cleanup as well
     system "brew", "cleanup", name rescue nil
+
+    # Restart service
+    system "brew", "services", "restart", name rescue nil
   end
 
   def post_upgrade
-    # Force cleanup on upgrade too
+    setup_permanent_script
+    
+    # Stop service
+    system "brew", "services", "stop", name rescue nil
+    sleep 1
+    
+    # Force cleanup
     system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
     system "brew", "cleanup", name rescue nil
+
+    # Restart service
+    system "brew", "services", "restart", name rescue nil
   end
 
   service do
     name macos: "com.alrocar.tiny-screen-monitor"
-    run ["sh", "-c", "exec #{HOMEBREW_PREFIX}/var/tiny-screen-monitor/tiny-screen-monitor"]
+    run ["sh", "-c", "exec #{HOMEBREW_PREFIX}/var/tiny-screen-monitor/tiny-screen-monitor.sh"]
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
