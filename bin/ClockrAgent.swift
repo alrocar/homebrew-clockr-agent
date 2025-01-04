@@ -20,8 +20,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             exit(0)
         }
         
-        task.executableURL = URL(fileURLWithPath: "/bin/bash")
-        task.arguments = ["-c", "exec /opt/homebrew/bin/clockr-agent.sh"]
+        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/clockr-agent.sh")
+        task.arguments = []
         
         // Create a new process group
         task.qualityOfService = .userInitiated
