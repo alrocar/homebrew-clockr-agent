@@ -38,16 +38,7 @@ class ClockrAgent < Formula
     chmod 0755, var/"log/clockr-agent"
   end
 
-  def setup_permanent_script
-    # Ensure log directory exists with proper permissions
-    system "sudo", "mkdir", "-p", "#{var}/log/clockr-agent"
-    system "sudo", "chown", ENV["USER"], "#{var}/log/clockr-agent"
-    system "sudo", "chmod", "755", "#{var}/log/clockr-agent"
-  end
-
   def post_install
-    setup_permanent_script
-    
     # Stop service first
     system "brew", "services", "stop", "clockr-agent" rescue nil
     sleep 1
