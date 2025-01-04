@@ -101,7 +101,7 @@ if [ -z "$TSM_SCREEN_USER" ]; then
     fi
 fi
 
-while true; do
+while [ "$CLEANUP_DONE" -eq 0 ]; do
     source "$CONFIG_FILE" || {
         log "ERROR" "Failed to source configuration file"
         exit 1
