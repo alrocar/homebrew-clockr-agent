@@ -14,8 +14,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Log app info
         NSLog("Starting ClockrAgent with identifier: \(bundleIdentifier)")
         
-        // Set up signal handling
+        // Set up signal handling for SIGTERM
         signal(SIGTERM) { signal in
+            NSLog("Received SIGTERM signal")
+            
+            // Find and kill all clockr-agent.sh processes
+            let findProcess = Process()
+            findProcess.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+            findProcess.arguments = ["-f", "clockr-agent.sh"]
+            
+            let pipe = Pipe()
+            findProcess.standardOutput = pipe
+            
+            try? findProcess.run()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let pids = String(data: data, encoding: .utf8) {
+                NSLog("Found PIDs to kill: \(pids)")
+                for pid in pids.split(separator: "\n") {
+                    if let pidNum = Int32(pid) {
+                        NSLog("Killing process \(pidNum)")
+                        kill(pidNum, SIGTERM)
+                        Thread.sleep(forTimeInterval: 0.5)
+                        kill(pidNum, SIGKILL)
+                    }
+                }
+            }
+            
             NotificationCenter.default.post(name: NSApplication.willTerminateNotification, object: nil)
             exit(0)
         }
@@ -46,6 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        NSLog("Application terminating through willTerminate...")
         NSLog("Application terminating, cleaning up...")
         
         // First try graceful termination
