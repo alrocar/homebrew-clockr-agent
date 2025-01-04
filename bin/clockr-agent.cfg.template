@@ -1,3 +1,2 @@
 # Configuration for clockr-agent
 TSM_TB_TOKEN=your_tinybird_token
-TSM_SCREEN_USER=your_username
