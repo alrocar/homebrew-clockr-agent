@@ -48,11 +48,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NSLog("Application terminating, cleaning up...")
         
-        // Just terminate the main task and let the shell handle cleanup
+        // First try graceful termination
         task.terminate()
         
-        // Give it a moment to clean up
-        Thread.sleep(forTimeInterval: 2.0)
+        // Give it a moment
+        Thread.sleep(forTimeInterval: 1.0)
+        
+        // Find and kill all clockr-agent.sh processes
+        let findProcess = Process()
+        findProcess.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        findProcess.arguments = ["-f", "clockr-agent.sh"]
+        
+        let pipe = Pipe()
+        findProcess.standardOutput = pipe
+        
+        try? findProcess.run()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let pids = String(data: data, encoding: .utf8) {
+            for pid in pids.split(separator: "\n") {
+                if let pidNum = Int32(pid) {
+                    NSLog("Killing process \(pidNum)")
+                    kill(pidNum, SIGTERM)
+                    Thread.sleep(forTimeInterval: 0.5)
+                    kill(pidNum, SIGKILL)
+                }
+            }
+        }
+        
+        findProcess.waitUntilExit()
+        Thread.sleep(forTimeInterval: 1.0)
     }
 }
 
