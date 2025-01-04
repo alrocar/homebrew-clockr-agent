@@ -40,6 +40,6 @@ echo "Updating Homebrew..."
 brew update
 
 echo "Upgrading clockr-agent..."
-brew upgrade clockr-agent
+brew upgrade clockr-agent --verbose
 
 echo "Release $NEW_VERSION completed!" 
