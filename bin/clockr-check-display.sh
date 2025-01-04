@@ -26,7 +26,7 @@ check_display_status() {
         
         echo -e "\nStatus determination:"
     else
-        display_active=$(pmset -g | grep "sleep prevented by" | wc -l)
+        display_active=$(pmset -g | grep "sleep prevented by powerd" | wc -l)
         screen_saver_active=$(osascript -e 'tell application "System Events" to get running of screen saver preferences')
         lock_state=$(osascript -e 'tell application "System Events" to tell process "loginwindow" to get value of UI element 1 of window 1' 2>/dev/null)
         idle_time=$(ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print $NF/1000000000; exit}')
