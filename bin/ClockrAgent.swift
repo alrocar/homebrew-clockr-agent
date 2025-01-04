@@ -74,15 +74,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             try? pkill.run()
             pkill.waitUntilExit()
 
-            let pkill = Process()
-            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            pkill.arguments = ["-f", "clockr-agent.sh"]
             try? pkill.run()
             pkill.waitUntilExit()
 
-            let pkill = Process()
-            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            pkill.arguments = ["-f", "clockr-agent.sh"]
             try? pkill.run()
             pkill.waitUntilExit()
         }
