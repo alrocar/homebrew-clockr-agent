@@ -8,6 +8,8 @@ class ClockrAgent < Formula
   depends_on "curl"
 
   def install
+    system "pwd"
+    system "ls -la"
     bin.install "bin/clockr-agent.sh"
 
     system "swiftc", 
