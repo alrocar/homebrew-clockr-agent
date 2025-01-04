@@ -8,10 +8,17 @@ class ClockrAgent < Formula
   depends_on "curl"
 
   def install
-    system "pwd"
-    system "ls -la"
+    # First, create all necessary directories
+    bin.mkpath
+    (etc/"clockr-agent").mkpath
+    (var/"log/clockr-agent").mkpath
+    
+    # Install binaries and scripts
     bin.install "bin/clockr-agent.sh"
+    bin.install "bin/check_display.sh"
+    bin.install "bin/clockr-agent.cfg.template"
 
+    # Compile Swift
     system "swiftc", 
            "-framework", "Cocoa",
            "-o", bin/"clockr-agent",
@@ -22,21 +29,11 @@ class ClockrAgent < Formula
     
     chmod 0755, bin/"clockr-agent"
     
-    bin.install "bin/check_display.sh"
-    
-    # Install config template
-    prefix.install "bin/clockr-agent.cfg.template"
-
-    # Create config directory
-    (etc/"clockr-agent").mkpath
-
     # Copy config template if it doesn't exist
     unless (etc/"clockr-agent/clockr-agent.cfg").exist?
-      cp prefix/"bin/clockr-agent.cfg.template", etc/"clockr-agent/clockr-agent.cfg"
+      cp bin/"clockr-agent.cfg.template", etc/"clockr-agent/clockr-agent.cfg"
     end
 
-    # Create logs directory with write permissions
-    (var/"log/clockr-agent").mkpath
     chmod 0755, var/"log/clockr-agent"
   end
 
