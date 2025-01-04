@@ -16,8 +16,8 @@ A macOS utility that monitors screen lock status and active applications, design
 ## Installation
 
 ```sh
-brew tap alrocar/tiny-screen-monitor
-brew install tiny-screen-monitor
+brew tap alrocar/clockr-agent
+brew install clockr-agent
 ```
 
 ## Configuration
@@ -50,19 +50,19 @@ You'll be prompted on service start for those permissions.
 Run as a background service (recommended):
 
 ```sh
-brew services start alrocar/tiny-screen-monitor/tiny-screen-monitor
+brew services start alrocar/clockr-agent/clockr-agent
 ```
 
 Run in normal model
 
 ```sh
-tiny-screen-monitor
+clockr-agent
 ```
 
 Run in verbose mode
 
 ```sh
-tiny-screen-monitor -v
+clockr-agent -v
 ```
 
 ## Troubleshooting
@@ -76,9 +76,9 @@ brew services list
 Check logs:
 
 ```sh
-cat $(brew --prefix)/var/log/tiny-screen-monitor/output.log
-cat $(brew --prefix)/var/log/tiny-screen-monitor/error.log
-cat $(brew --prefix)/var/log/tiny-screen-monitor/tiny-screen-monitor.log
+cat $(brew --prefix)/var/log/clockr-agent/output.log
+cat $(brew --prefix)/var/log/clockr-agent/error.log
+cat $(brew --prefix)/var/log/clockr-agent/clockr-agent.log
 ```
 
 ## Dependencies
@@ -91,13 +91,13 @@ cat $(brew --prefix)/var/log/tiny-screen-monitor/tiny-screen-monitor.log
 To remove the package:
 
 ```sh
-brew uninstall tiny-screen-monitor
+brew uninstall clockr-agent
 ```
 
 To remove the tap:
 
 ```sh
-brew untap alrocar/tiny-screen-monitor
+brew untap alrocar/clockr-agent
 ```
 
 ## License
@@ -109,5 +109,5 @@ MIT
 brew services list
 
 # Check logs
-cat $(brew --prefix)/var/log/tiny-screen-monitor/output.log
-cat $(brew --prefix)/var/log/tiny-screen-monitor/error.log
+cat $(brew --prefix)/var/log/clockr-agent/output.log
+cat $(brew --prefix)/var/log/clockr-agent/error.log

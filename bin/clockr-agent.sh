@@ -3,18 +3,21 @@
 # Enable job control and process group management
 set -m
 
+# Source the auth script
+source "$(dirname "$0")/auth.sh"
+
 # Flag to prevent multiple cleanup calls
 CLEANUP_DONE=0
 
 # Store PID in a file for service management
-PID_FILE="/opt/homebrew/var/run/tiny-screen-monitor.pid"
+PID_FILE="/opt/homebrew/var/run/clockr-agent.pid"
 echo $$ > "$PID_FILE"
 
 cleanup() {
     # Only run cleanup once
     if [ "$CLEANUP_DONE" -eq 0 ]; then
         CLEANUP_DONE=1
-        log "INFO" "Shutting down tiny-screen-monitor..."
+        log "INFO" "Shutting down clockr-agent..." "$TSM_SCREEN_USER" "$TSM_TB_TOKEN"
         
         # Send final event if we have previous state
         if [[ -n "$previous_timestamp" ]]; then
@@ -51,14 +54,14 @@ previous_state="uninitialized"
 # Add error handling for required commands
 for cmd in osascript curl; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "ERROR" "Required command '$cmd' not found"
+        log "ERROR" "Required command '$cmd' not found"
         exit 1
     fi
 done
 
 # Configuration handling
 BREW_PREFIX=$(brew --prefix)
-CONFIG_FILE="${1:-$BREW_PREFIX/etc/tiny-screen-monitor/tiny-screen-monitor.cfg}"
+CONFIG_FILE="${1:-$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg}"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "ERROR" "Configuration file not found at $CONFIG_FILE"
     echo "ERROR" "Please create a configuration file with required variables:"
@@ -68,18 +71,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
-# Setup logging using Homebrew's var directory
-LOG_DIR="$BREW_PREFIX/var/log/tiny-screen-monitor"
-LOG_FILE="${LOG_DIR}/tiny-screen-monitor.log"
-
-# Create log directory if it doesn't exist
-mkdir -p "$LOG_DIR"
-
-log() {
-    local level="$1"
-    local message="$2"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" | tee -a "$LOG_FILE"
-}
+source "$(dirname "$0")/log.sh"
 
 # Source the display status checker from Homebrew's bin directory
 source "$BREW_PREFIX/bin/check_display.sh"
@@ -93,6 +85,21 @@ previous_domain=""
 previous_tab_url=""
 HOUR_IN_SECONDS=3600
 MAX_DURATION=60
+
+# Check if config exists and is not empty
+source "$CONFIG_FILE" || {
+    log "ERROR" "Failed to source configuration file"
+    exit 1
+}
+
+if [ -z "$TSM_SCREEN_USER" ]; then
+    echo "No environment variables found. Starting authentication..."
+    authenticate_agent "$CONFIG_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Authentication failed"
+        exit 1
+    fi
+fi
 
 while true; do
     source "$CONFIG_FILE" || {

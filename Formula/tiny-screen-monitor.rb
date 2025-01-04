@@ -1,45 +1,45 @@
-class TinyScreenMonitor < Formula
+class ClockrAgent < Formula
   desc "Monitor screen lock status and active applications on macOS"
-  homepage "https://github.com/alrocar/homebrew-tiny-screen-monitor"
-  url "https://github.com/alrocar/homebrew-tiny-screen-monitor/archive/refs/tags/0.0.0.dev59.tar.gz"
+  homepage "https://github.com/alrocar/homebrew-clockr-agent"
+  url "https://github.com/alrocar/homebrew-clockr-agent/archive/refs/tags/0.0.0.dev59.tar.gz"
   sha256 "6185f993d8f74cbe3da44ccc90c21a55835f5dd260f0a7fc27b84404abe7609c"
   license "MIT"
 
   depends_on "curl"
 
   def install
-    bin.install "bin/tiny-screen-monitor.sh"
+    bin.install "bin/clockr-agent.sh"
 
     system "swiftc", 
            "-framework", "Cocoa",
-           "-o", bin/"tiny-screen-monitor",
+           "-o", bin/"clockr-agent",
            "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
-           "-module-name", "TinyScreenMonitor",
-           "bin/TinyScreenMonitor.swift" \
+           "-module-name", "ClockrAgent",
+           "bin/ClockrAgent.swift" \
     or raise "Swift compilation failed"
     
-    chmod 0755, bin/"tiny-screen-monitor"
+    chmod 0755, bin/"clockr-agent"
     
     bin.install "bin/check_display.sh"
     
     # Install config template
-    prefix.install "bin/tiny-screen-monitor.cfg.template"
+    prefix.install "bin/clockr-agent.cfg.template"
 
     # Create logs directory with write permissions
-    (var/"log/tiny-screen-monitor").mkpath
-    chmod 0755, var/"log/tiny-screen-monitor"
+    (var/"log/clockr-agent").mkpath
+    chmod 0755, var/"log/clockr-agent"
   end
 
   def setup_permanent_script
     # Ensure log directory exists with proper permissions
-    system "sudo", "mkdir", "-p", "#{var}/log/tiny-screen-monitor"
-    system "sudo", "chown", ENV["USER"], "#{var}/log/tiny-screen-monitor"
-    system "sudo", "chmod", "755", "#{var}/log/tiny-screen-monitor"
+    system "sudo", "mkdir", "-p", "#{var}/log/clockr-agent"
+    system "sudo", "chown", ENV["USER"], "#{var}/log/clockr-agent"
+    system "sudo", "chmod", "755", "#{var}/log/clockr-agent"
   end
 
   def cleanup_processes
-    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
-    system "pkill", "-f", "tiny-screen-monitor.sh" rescue nil
+    system "pkill", "-f", "clockr-agent.sh" rescue nil
+    system "pkill", "-f", "clockr-agent.sh" rescue nil
     sleep 1
   end
 
@@ -52,7 +52,7 @@ class TinyScreenMonitor < Formula
     cleanup_processes
 
     # Force cleanup of ALL versions except current
-    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
+    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/clockr-agent/*"].reject { |d| d.include?(version.to_s) } rescue nil
     system "brew", "cleanup", name rescue nil
 
     # Ensure service directory exists
@@ -71,7 +71,7 @@ class TinyScreenMonitor < Formula
     cleanup_processes
     
     # Force cleanup
-    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/tiny-screen-monitor/*"].reject { |d| d.include?(version.to_s) } rescue nil
+    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/clockr-agent/*"].reject { |d| d.include?(version.to_s) } rescue nil
     system "brew", "cleanup", name rescue nil
 
     # Ensure service directory exists
@@ -82,13 +82,13 @@ class TinyScreenMonitor < Formula
   end
 
   service do
-    name macos: "com.alrocar.tiny-screen-monitor"
-    run opt_bin/"tiny-screen-monitor"
+    name macos: "com.alrocar.clockr-agent"
+    run opt_bin/"clockr-agent"
     working_dir HOMEBREW_PREFIX
     keep_alive true
     process_type :background
-    log_path "#{var}/log/tiny-screen-monitor/debug.log"
-    error_log_path "#{var}/log/tiny-screen-monitor/error.log"
+    log_path "#{var}/log/clockr-agent/debug.log"
+    error_log_path "#{var}/log/clockr-agent/error.log"
     environment_variables PATH: std_service_path_env
   end
 
@@ -97,29 +97,29 @@ class TinyScreenMonitor < Formula
       To complete the installation:
 
       1. Edit your configuration file:
-         $EDITOR #{etc}/tiny-screen-monitor/tiny-screen-monitor.cfg
+         $EDITOR #{etc}/clockr-agent/clockr-agent.cfg
 
       2. Ensure you have granted necessary permissions:
          - Accessibility access for monitoring active applications
          - Screen Recording permission for capturing browser URLs
 
       3. Start the service:
-         brew services start tiny-screen-monitor
+         brew services start clockr-agent
 
       Or to start manually:
-         tiny-screen-monitor
+         clockr-agent
     EOS
   end
 
   def post_uninstall
     # Remove logs directory
-    rm_r var/"log/tiny-screen-monitor"
+    rm_r var/"log/clockr-agent"
 
     # Optionally remove config file (uncomment if desired)
-    rm Pathname.new(Dir.home)/"tiny-screen-monitor.cfg"
+    rm Pathname.new(Dir.home)/"clockr-agent.cfg"
   end
 
   test do
-    system "#{bin}/tiny-screen-monitor", "--version"
+    system "#{bin}/clockr-agent", "--version"
   end
 end

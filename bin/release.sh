@@ -7,8 +7,8 @@ if [ -z "$1" ]; then
 fi
 
 NEW_VERSION=$1
-FORMULA_FILE="Formula/tiny-screen-monitor.rb"
-REPO_URL="https://github.com/alrocar/homebrew-tiny-screen-monitor"
+FORMULA_FILE="Formula/clockr-agent.rb"
+REPO_URL="https://github.com/alrocar/homebrew-clockr-agent"
 
 echo "Creating new release $NEW_VERSION..."
 
@@ -39,7 +39,7 @@ git push origin main
 echo "Updating Homebrew..."
 brew update
 
-echo "Upgrading tiny-screen-monitor..."
-brew upgrade tiny-screen-monitor
+echo "Upgrading clockr-agent..."
+brew upgrade clockr-agent
 
 echo "Release $NEW_VERSION completed!" 

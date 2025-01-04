@@ -1,10 +1,10 @@
 import Cocoa
 import Foundation
 
-@objc(TinyScreenMonitorApp)
+@objc(ClockrAgentApp)
 class AppDelegate: NSObject, NSApplicationDelegate {
     let task = Process()
-    let bundleIdentifier = "com.alrocar.tiny-screen-monitor"
+    let bundleIdentifier = "com.alrocar.clockr-agent"
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Request permissions upfront
@@ -12,7 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AXIsProcessTrustedWithOptions(options)
         
         // Log app info
-        NSLog("Starting TinyScreenMonitor with identifier: \(bundleIdentifier)")
+        NSLog("Starting ClockrAgent with identifier: \(bundleIdentifier)")
         
         // Set up signal handling
         signal(SIGTERM) { signal in
@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         task.executableURL = URL(fileURLWithPath: "/bin/bash")
-        task.arguments = ["-c", "exec /opt/homebrew/bin/tiny-screen-monitor.sh"]
+        task.arguments = ["-c", "exec /opt/homebrew/bin/clockr-agent.sh"]
         
         // Create a new process group
         task.qualityOfService = .userInitiated

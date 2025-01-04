@@ -3,18 +3,18 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.alrocar.tiny-screen-monitor</string>
+    <string>com.alrocar.clockr-agent</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/tiny-screen-monitor</string>
+        <string>/opt/homebrew/bin/clockr-agent</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardErrorPath</key>
-    <string>/opt/homebrew/var/log/tiny-screen-monitor/error.log</string>
+    <string>/opt/homebrew/var/log/clockr-agent/error.log</string>
     <key>StandardOutPath</key>
-    <string>/opt/homebrew/var/log/tiny-screen-monitor/output.log</string>
+    <string>/opt/homebrew/var/log/clockr-agent/output.log</string>
 </dict>
 </plist> 
