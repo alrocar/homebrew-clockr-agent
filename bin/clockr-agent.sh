@@ -4,7 +4,7 @@
 set -m
 
 # Source the auth script
-source "$(dirname "$0")/auth.sh"
+source "$(dirname "$0")/clockr-auth.sh"
 
 # Flag to prevent multiple cleanup calls
 CLEANUP_DONE=0
@@ -74,7 +74,7 @@ fi
 source "$(dirname "$0")/log.sh"
 
 # Source the display status checker from Homebrew's bin directory
-source "$BREW_PREFIX/bin/check_display.sh"
+source "$BREW_PREFIX/bin/clockr-check-display.sh"
 
 # At the start of the script
 previous_app=""
