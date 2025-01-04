@@ -25,6 +25,14 @@ class ClockrAgent < Formula
     # Install config template
     prefix.install "bin/clockr-agent.cfg.template"
 
+    # Create config directory
+    (etc/"clockr-agent").mkpath
+
+    # Copy config template if it doesn't exist
+    unless (etc/"clockr-agent/clockr-agent.cfg").exist?
+      cp prefix/"bin/clockr-agent.cfg.template", etc/"clockr-agent/clockr-agent.cfg"
+    end
+
     # Create logs directory with write permissions
     (var/"log/clockr-agent").mkpath
     chmod 0755, var/"log/clockr-agent"
