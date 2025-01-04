@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 # Enable job control and process group management
 set -m
 
