@@ -48,38 +48,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NSLog("Application terminating, cleaning up...")
         
-        // First try graceful termination
+        // Just terminate the main task and let the shell handle cleanup
         task.terminate()
         
-        // Wait briefly for cleanup
-        Thread.sleep(forTimeInterval: 1.0)
-        
-        // If still running, try harder
-        if task.isRunning {
-            // Get process group of the shell script
-            let shellPid = task.processIdentifier
-            let pgid = getpgid(shellPid)
-            
-            if pgid > 0 {
-                NSLog("Killing process group \(pgid)")
-                killpg(pgid, SIGTERM)
-                Thread.sleep(forTimeInterval: 0.5)
-                killpg(pgid, SIGKILL)
-            }
-            
-            // As a last resort, use Process instead of system()
-            let pkill = Process()
-            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            pkill.arguments = ["-f", "clockr-agent.sh"]
-            try? pkill.run()
-            pkill.waitUntilExit()
-
-            try? pkill.run()
-            pkill.waitUntilExit()
-
-            try? pkill.run()
-            pkill.waitUntilExit()
-        }
+        // Give it a moment to clean up
+        Thread.sleep(forTimeInterval: 2.0)
     }
 }
 

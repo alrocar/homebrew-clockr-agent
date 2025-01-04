@@ -1,8 +1,22 @@
 #!/bin/bash
 
-# Create our own process group
-set -o monitor
-trap 'trap - SIGTERM && kill -- -$$' SIGTERM
+# Store our PID
+echo $$ > /tmp/clockr-agent.pid
+
+cleanup() {
+    echo "Cleanup called at $(date)" >> /tmp/clockr-debug.log
+    
+    # Kill all child processes in our process group
+    pkill -P $$
+    
+    # Kill ourselves
+    kill -9 $$
+    
+    exit 0
+}
+
+# Trap all termination signals
+trap cleanup SIGTERM SIGINT SIGQUIT EXIT
 
 # Source the auth script
 source "$(dirname "$0")/clockr-auth.sh"
@@ -13,33 +27,6 @@ CLEANUP_DONE=0
 # Store PID in a file for service management
 PID_FILE="/opt/homebrew/var/run/clockr-agent.pid"
 echo $$ > "$PID_FILE"
-
-cleanup() {
-    # Only run cleanup once
-    if [ "$CLEANUP_DONE" -eq 0 ]; then
-        CLEANUP_DONE=1
-        log "INFO" "Shutting down clockr-agent..." "$TSM_SCREEN_USER" "$TSM_TB_TOKEN"
-        
-        # Send final event if we have previous state
-        if [[ -n "$previous_timestamp" ]]; then
-            current_timestamp=$(date +%s)
-            duration=$((current_timestamp - previous_timestamp))
-            
-            # Send the final event with current duration
-            curl \
-                -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
-                -H "Authorization: Bearer $TSM_TB_TOKEN" \
-                -d "{\"timestamp\":\"$current_date\",\"status\":\"$previous_status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$previous_app\",\"window_title\":\"$previous_window\",\"domains\":[\"$previous_domain\"],\"tabs\":[\"$previous_tab_url\"]}" \
-                -w "\n"
-        fi
-        
-        # Kill all child processes first
-        kill -- -$$ 2>/dev/null
-        exit 0
-    fi
-}
-
-trap cleanup SIGINT SIGTERM EXIT
 
 previous_state="uninitialized"
 
