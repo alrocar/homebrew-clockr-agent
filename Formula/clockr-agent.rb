@@ -46,17 +46,30 @@ class ClockrAgent < Formula
   end
 
   def cleanup_processes
+    # First try pkill
+    system "pkill", "-f", "clockr-agent" rescue nil
     system "pkill", "-f", "clockr-agent.sh" rescue nil
-    system "pkill", "-f", "clockr-agent.sh" rescue nil
+    
+    # Then try killall (more common on macOS)
+    system "killall", "clockr-agent" rescue nil
+    system "killall", "clockr-agent.sh" rescue nil
+    
+    # As a last resort, find PIDs and kill them directly
+    system %Q(ps aux | grep "[c]lockr-agent" | awk '{print $2}' | xargs kill -9) rescue nil
+    
     sleep 1
+    
+    # Verify no processes are left
+    system "ps aux | grep clockr-agent | grep -v grep" rescue nil
   end
 
   def post_install
     setup_permanent_script
     
-    # Stop service
+    # Stop service first
     system "brew", "services", "stop", name rescue nil
     sleep 1
+    
     cleanup_processes
 
     # Force cleanup of ALL versions except current
@@ -71,22 +84,8 @@ class ClockrAgent < Formula
   end
 
   def post_upgrade
-    setup_permanent_script
-    
-    # Stop service
-    system "brew", "services", "stop", name rescue nil
-    sleep 1
-    cleanup_processes
-    
-    # Force cleanup
-    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/clockr-agent/*"].reject { |d| d.include?(version.to_s) } rescue nil
-    system "brew", "cleanup", name rescue nil
-
-    # Ensure service directory exists
-    system "mkdir", "-p", "#{ENV["HOME"]}/Library/LaunchAgents"
-    
-    # Start service (don't use restart as it might fail)
-    system "brew", "services", "start", name rescue nil
+    # Same cleanup process as post_install
+    post_install
   end
 
   service do
