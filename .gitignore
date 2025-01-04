@@ -1,4 +1,4 @@
 .DS_Store
 logs
 tmp
-.lock_screen_cfg
+.clockr-agent.cfg
