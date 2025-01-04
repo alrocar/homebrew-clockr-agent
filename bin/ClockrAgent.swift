@@ -67,10 +67,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 killpg(pgid, SIGKILL)
             }
             
-            // As a last resort
-            system("pkill -f clockr-agent.sh")
-            system("pkill -f clockr-agent.sh")
-            system("pkill -f clockr-agent.sh")
+            // As a last resort, use Process instead of system()
+            let pkill = Process()
+            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            pkill.arguments = ["-f", "clockr-agent.sh"]
+            try? pkill.run()
+            pkill.waitUntilExit()
+
+            let pkill = Process()
+            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            pkill.arguments = ["-f", "clockr-agent.sh"]
+            try? pkill.run()
+            pkill.waitUntilExit()
+
+            let pkill = Process()
+            pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            pkill.arguments = ["-f", "clockr-agent.sh"]
+            try? pkill.run()
+            pkill.waitUntilExit()
         }
     }
 }
