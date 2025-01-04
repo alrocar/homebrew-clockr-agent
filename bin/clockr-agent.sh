@@ -1,7 +1,4 @@
 #!/bin/bash
-set -x
-# Enable job control and process group management
-set -m
 
 # Source the auth script
 source "$(dirname "$0")/clockr-auth.sh"
