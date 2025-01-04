@@ -38,26 +38,26 @@ class ClockrAgent < Formula
     chmod 0755, var/"log/clockr-agent"
   end
 
-  def post_install
-    # Stop service first
-    system "brew", "services", "stop", "clockr-agent" rescue nil
-    sleep 1
+  # def post_install
+  #   # Stop service first
+  #   system "brew", "services", "stop", "clockr-agent" rescue nil
+  #   sleep 1
 
-    # Force cleanup of ALL versions except current
-    system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/clockr-agent/*"].reject { |d| d.include?(version.to_s) } rescue nil
-    system "brew", "cleanup", name rescue nil
+  #   # Force cleanup of ALL versions except current
+  #   system "rm", "-rf", *Dir["#{HOMEBREW_PREFIX}/Cellar/clockr-agent/*"].reject { |d| d.include?(version.to_s) } rescue nil
+  #   system "brew", "cleanup", name rescue nil
 
-    # Ensure service directory exists
-    system "mkdir", "-p", "#{ENV["HOME"]}/Library/LaunchAgents"
+  #   # Ensure service directory exists
+  #   system "mkdir", "-p", "#{ENV["HOME"]}/Library/LaunchAgents"
     
-    # Start service
-    system "brew", "services", "start", "clockr-agent" rescue nil
-  end
+  #   # Start service
+  #   system "brew", "services", "start", "clockr-agent" rescue nil
+  # end
 
-  def post_upgrade
-    # Same cleanup process as post_install
-    post_install
-  end
+  # def post_upgrade
+  #   # Same cleanup process as post_install
+  #   post_install
+  # end
 
   service do
     name macos: "com.alrocar.clockr-agent"
