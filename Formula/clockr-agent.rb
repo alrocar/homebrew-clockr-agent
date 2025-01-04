@@ -15,8 +15,8 @@ class ClockrAgent < Formula
     
     # Install binaries and scripts
     bin.install "bin/clockr-agent.sh"
-    bin.install "bin/clocker-check-display.sh"
-    bin.install "bin/clocker-auth.sh"
+    bin.install "bin/clockr-check-display.sh"
+    bin.install "bin/clockr-auth.sh"
     bin.install "bin/clockr-agent.cfg.template"
 
     # Compile Swift
