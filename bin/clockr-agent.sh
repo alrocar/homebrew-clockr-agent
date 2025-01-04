@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Create our own process group
+set -o monitor
+trap 'trap - SIGTERM && kill -- -$$' SIGTERM
+
 # Source the auth script
 source "$(dirname "$0")/clockr-auth.sh"
 
@@ -30,17 +34,8 @@ cleanup() {
         fi
         
         # Kill all child processes first
-        pkill -P $$ 2>/dev/null
-        
-        # Remove lock file
-        rm -f "$LOCK_FILE"
-        
-        # Kill ourselves with SIGTERM first
-        kill -TERM $$ 2>/dev/null || true
-        
-        # If we're still here after 1 second, force quit
-        sleep 1
-        kill -9 $$ 2>/dev/null
+        kill -- -$$ 2>/dev/null
+        exit 0
     fi
 }
 

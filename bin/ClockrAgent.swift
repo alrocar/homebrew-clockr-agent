@@ -48,22 +48,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NSLog("Application terminating, cleaning up...")
         
-        // Kill the entire process group
-        let pid = task.processIdentifier
-        NSLog("Killing process group \(-pid)")
-        kill(-pid, SIGTERM)
-        Thread.sleep(forTimeInterval: 0.5)
-        kill(-pid, SIGKILL)
-        
-        // Terminate the main task
+        // First try graceful termination
         task.terminate()
         
         // Wait briefly for cleanup
         Thread.sleep(forTimeInterval: 1.0)
         
-        // Force kill if still running
+        // If still running, try harder
         if task.isRunning {
-            task.interrupt()
+            // Get process group of the shell script
+            let shellPid = task.processIdentifier
+            let pgid = getpgid(shellPid)
+            
+            if pgid > 0 {
+                NSLog("Killing process group \(pgid)")
+                killpg(pgid, SIGTERM)
+                Thread.sleep(forTimeInterval: 0.5)
+                killpg(pgid, SIGKILL)
+            }
+            
+            // As a last resort
+            system("pkill -f clockr-agent.sh")
+            system("pkill -f clockr-agent.sh")
+            system("pkill -f clockr-agent.sh")
         }
     }
 }
