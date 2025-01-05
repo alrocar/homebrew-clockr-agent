@@ -55,7 +55,7 @@ check_display_status() {
     fi
     
     # If not locked, check for idle
-    if [ "${idle_time%.*}" -gt 1 ]; then
+    if [ "${idle_time%.*}" -gt 30 ]; then
         echo "Status: IDLE (${idle_time%.*}s)"
         return 2
     fi
