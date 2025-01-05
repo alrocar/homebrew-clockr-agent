@@ -169,7 +169,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func authenticate() {
         let authTask = Process()
         authTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-        authTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-auth.sh"]
+        authTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-auth.sh && authenticate_agent"]
         
         // Capture output for error handling
         let pipe = Pipe()
