@@ -103,12 +103,15 @@ while [ "$CLEANUP_DONE" -eq 0 ]; do
     if [ $status_code -eq 0 ]; then
         # UNLOCKED
         echo "Display is unlocked, tracking activity..."
+        status="unlocked"
     elif [ $status_code -eq 1 ]; then
         # LOCKED
         echo "Display is locked, pausing tracking..."
+        status="locked"
     elif [ $status_code -eq 2 ]; then
         # IDLE
         echo "Display is idle, tracking as idle time..."
+        status="idle"
     fi
 
     # Status output can be used for logging
