@@ -8,7 +8,7 @@ LOG_FILE="${LOG_DIR}/clockr-agent.log"
 mkdir -p "$LOG_DIR"
 
 BREW_PREFIX=$(brew --prefix)
-CONFIG_FILE="${1:-$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg}"
+CONFIG_FILE="$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg"
 
 source "$CONFIG_FILE"
 

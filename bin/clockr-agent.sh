@@ -1,11 +1,6 @@
 #!/bin/bash
 
-# Store our PID
-echo $$ > /tmp/clockr-agent.pid
-
 cleanup() {
-    echo "Cleanup called at $(date)" >> /tmp/clockr-debug.log
-    
     # Kill all child processes in our process group
     pkill -P $$
     
@@ -24,10 +19,6 @@ source "$(dirname "$0")/clockr-auth.sh"
 # Flag to prevent multiple cleanup calls
 CLEANUP_DONE=0
 
-# Store PID in a file for service management
-PID_FILE="/opt/homebrew/var/run/clockr-agent.pid"
-echo $$ > "$PID_FILE"
-
 previous_state="uninitialized"
 
 # Add error handling for required commands
@@ -40,7 +31,7 @@ done
 
 # Configuration handling
 BREW_PREFIX=$(brew --prefix)
-CONFIG_FILE="${1:-$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg}"
+CONFIG_FILE="$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "ERROR" "Configuration file not found at $CONFIG_FILE"
     echo "ERROR" "Please create a configuration file with required variables:"
@@ -52,8 +43,24 @@ fi
 
 source "$(dirname "$0")/log.sh"
 
-# Source the display status checker from Homebrew's bin directory
-source "$BREW_PREFIX/bin/clockr-check-display.sh"
+# Set VERBOSE based on environment variable first
+export VERBOSE=${VERBOSE:-0}
+
+# Parse command line arguments (can override environment setting)
+while getopts "v" opt; do
+    case $opt in
+        v)
+            export VERBOSE=1
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Source the scripts with VERBOSE setting
+source "$(dirname "$0")/clockr-check-display.sh"
 
 # At the start of the script
 previous_app=""
@@ -88,14 +95,24 @@ while [ "$CLEANUP_DONE" -eq 0 ]; do
     # start_time=$(date +%s.%N)
     current_date=$(date -u +'%Y-%m-%d %H:%M:%S')
 
-    # Use the imported check_display_status function
-    if check_display_status; then
-        log "INFO" "Display is unlocked"
-        status="unlocked"
-    else
-        log "INFO" "Display is locked"
-        status="locked"
+    # Store the status and return code separately
+    status_output=$(VERBOSE=$VERBOSE check_display_status)
+    status_code=$?
+
+    # Now use the return code for comparisons
+    if [ $status_code -eq 0 ]; then
+        # UNLOCKED
+        echo "Display is unlocked, tracking activity..."
+    elif [ $status_code -eq 1 ]; then
+        # LOCKED
+        echo "Display is locked, pausing tracking..."
+    elif [ $status_code -eq 2 ]; then
+        # IDLE
+        echo "Display is idle, tracking as idle time..."
     fi
+
+    # Status output can be used for logging
+    echo "Full status: $status_output"
 
     # Get active app
     active_app=$(osascript -e '
