@@ -12,9 +12,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Clockr")
-            // Or use a custom image:
-            // button.image = NSImage(named: "clockr-icon")
+            // Load custom icon
+            let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr-icon.png"
+            if let image = NSImage(contentsOfFile: iconPath) {
+                image.isTemplate = true  // Make it work with dark/light modes
+                button.image = image
+            } else {
+                // Fallback to system icon
+                button.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Clockr")
+            }
         }
         
         // Create the menu

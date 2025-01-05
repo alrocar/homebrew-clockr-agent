@@ -7,6 +7,11 @@ class ClockrAgent < Formula
 
   depends_on "curl"
 
+  resource "clockr-icon" do
+    url "https://clockr.xyz.com/clockr-icon.tar.gz"
+    sha256 "dbb710d768416665daea2fd1a1414eaac120c3e25629f3c7b3e1d680edb7a6fb"
+  end
+
   def install
     # First, create all necessary directories
     bin.mkpath
@@ -36,6 +41,15 @@ class ClockrAgent < Formula
     end
 
     chmod 0755, var/"log/clockr-agent"
+
+    # Install icons
+    resource("clockr-icon").stage {
+      icons_dir = "#{prefix}/share/clockr-agent/icons"
+      mkdir_p icons_dir
+      cp "clockr-icon.png", "#{icons_dir}/clockr-icon.png"
+      cp "clockr-icon@2x.png", "#{icons_dir}/clockr-icon@2x.png"
+      cp "clockr-icon@3x.png", "#{icons_dir}/clockr-icon@3x.png"
+    }
   end
 
   # def post_install
