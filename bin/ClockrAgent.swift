@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let task = Process()
     let bundleIdentifier = "com.alrocar.clockr-agent"
     var statusItem: NSStatusItem?
+    var timer: Timer?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create the status bar item
@@ -17,9 +18,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if let image = NSImage(contentsOfFile: iconPath) {
                 image.isTemplate = true  // Make it work with dark/light modes
                 button.image = image
-            } else {
-                // Fallback to system icon
-                button.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Clockr")
+                button.imagePosition = .imageLeft
+                updateStats()  // Initial update
+                
+                // Set up timer to update stats every minute
+                timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+                    self?.updateStats()
+                }
             }
         }
         
@@ -198,6 +203,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } catch {
             NSLog("Failed to run auth script: \(error)")
+        }
+    }
+    
+    func updateStats() {
+        // Example: Get current time tracked today
+        let statsTask = Process()
+        statsTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+        statsTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-stats.sh && get_today_stats"]
+        
+        let pipe = Pipe()
+        statsTask.standardOutput = pipe
+        
+        do {
+            try statsTask.run()
+            statsTask.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let stats = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                statusItem?.button?.title = " \(stats)"  // Space after icon
+            }
+        } catch {
+            NSLog("Failed to get stats: \(error)")
+            statusItem?.button?.title = " --:--"  // Fallback
         }
     }
 }
