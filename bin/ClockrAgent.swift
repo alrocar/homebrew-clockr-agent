@@ -5,8 +5,26 @@ import Foundation
 class AppDelegate: NSObject, NSApplicationDelegate {
     let task = Process()
     let bundleIdentifier = "com.alrocar.clockr-agent"
+    var statusItem: NSStatusItem?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Create the status bar item
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        
+        if let button = statusItem?.button {
+            button.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Clockr")
+            // Or use a custom image:
+            // button.image = NSImage(named: "clockr-icon")
+        }
+        
+        // Create the menu
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Status: Running", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        
+        statusItem?.menu = menu
+        
         // Request permissions upfront
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         AXIsProcessTrustedWithOptions(options)
