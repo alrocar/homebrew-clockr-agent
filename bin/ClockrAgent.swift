@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import SQLite3
 
 @objc(ClockrAgentApp)
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -7,8 +8,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let bundleIdentifier = "com.alrocar.clockr-agent"
     var statusItem: NSStatusItem?
     var timer: Timer?
+    var lastStatus: String?
+    var statusStartTime: Date?
+    var todayActiveTime: TimeInterval = 0
+    var isCheckingStatus = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Create .clockr directory if it doesn't exist
+        try? FileManager.default.createDirectory(
+            atPath: "\(NSHomeDirectory())/.clockr",
+            withIntermediateDirectories: true
+        )
+        
+        setupDatabase()
+        
         // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
@@ -21,10 +34,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 button.imagePosition = .imageLeft
                 updateStats()  // Initial update
                 
-                // Set up timer to update stats every minute
-                // timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
-                //     self?.updateStats()
-                // }
+                // Set up timer to update stats every second
+                timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                    self?.updateStats()
+                }
             }
         }
         
@@ -100,6 +113,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         try? task.run()
+    }
+    
+    func setupDatabase() {
+        let db = try? Connection(dbPath)
+        try? db?.run("""
+            CREATE TABLE IF NOT EXISTS activity (
+                id INTEGER PRIMARY KEY,
+                status TEXT,
+                start_time DATETIME,
+                end_time DATETIME
+            )
+        """)
     }
     
     func cleanupAndQuit() {
@@ -187,24 +212,59 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func updateStats() {
-        // do {
-        //     let statsTask = Process()
-        //     statsTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-        //     statsTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-stats.sh && get_today_stats"]
+        // Prevent overlapping calls
+        guard !isCheckingStatus else { return }
+        isCheckingStatus = true
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let statsTask = Process()
+            statsTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+            statsTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-check-display.sh && check_display_status"]
             
-        //     let pipe = Pipe()
-        //     statsTask.standardOutput = pipe
-        //     try statsTask.run()
-        //     statsTask.waitUntilExit()
+            let pipe = Pipe()
+            statsTask.standardOutput = pipe
             
-        //     let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        //     if let stats = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-        //         statusItem?.button?.title = " \(stats)"  // Space after icon
-        //     }
-        // } catch {
-        //     NSLog("Failed to get stats: \(error)")
-        statusItem?.button?.title = " --:--"  // Fallback
-        // }
+            do {
+                try statsTask.run()
+                statsTask.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let status = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    DispatchQueue.main.async {
+                        self?.updateDisplay(with: status)
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.statusItem?.button?.title = " --:--"
+                    NSLog("Failed to get stats: \(error)")
+                }
+            }
+            
+            self?.isCheckingStatus = false
+        }
+    }
+    
+    private func updateDisplay(with status: String) {
+        let now = Date()
+        
+        // If status is unlocked, add the elapsed time since last check
+        if status == "unlocked" {
+            if let lastStart = statusStartTime {
+                todayActiveTime += now.timeIntervalSince(lastStart)
+            }
+            statusStartTime = now
+        } else {
+            statusStartTime = nil
+        }
+        
+        lastStatus = status
+        
+        // Update display with hours, minutes, and seconds
+        let hours = Int(todayActiveTime) / 3600
+        let minutes = Int(todayActiveTime) % 3600 / 60
+        let seconds = Int(todayActiveTime) % 60
+        statusItem?.button?.title = String(format: " %02d:%02d:%02d", hours, minutes, seconds)
     }
 }
 
