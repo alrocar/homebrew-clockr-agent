@@ -222,7 +222,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self?.statusItem?.button?.title = " --:--"
+                    self?.statusItem?.button?.title = " --:--:--"
                     NSLog("Failed to get stats: \(error)")
                 }
             }
@@ -250,6 +250,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hours = Int(todayActiveTime) / 3600
         let minutes = Int(todayActiveTime) % 3600 / 60
         let seconds = Int(todayActiveTime) % 60
+        
+        NSLog("Status: \(status), Time: \(hours):\(minutes):\(seconds)")
         statusItem?.button?.title = String(format: " %02d:%02d:%02d", hours, minutes, seconds)
     }
 }
