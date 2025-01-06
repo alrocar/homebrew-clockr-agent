@@ -20,8 +20,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             withIntermediateDirectories: true
         )
         
-        setupDatabase()
-        
         // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
@@ -113,18 +111,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         try? task.run()
-    }
-    
-    func setupDatabase() {
-        let db = try? Connection(dbPath)
-        try? db?.run("""
-            CREATE TABLE IF NOT EXISTS activity (
-                id INTEGER PRIMARY KEY,
-                status TEXT,
-                start_time DATETIME,
-                end_time DATETIME
-            )
-        """)
     }
     
     func cleanupAndQuit() {
