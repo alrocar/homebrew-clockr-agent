@@ -104,6 +104,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc func quit() {
         NSLog("Quitting application...")
+        
+        // Stop the stats update timer
+        timer?.invalidate()
+        timer = nil
+        
         // First try graceful termination
         task.terminate()
         
@@ -132,7 +137,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        NSApplication.shared.terminate(nil)
+        // Wait for the find process to complete
+        findProcess.waitUntilExit()
+        
+        // Force quit the application
+        exit(0)
     }
     
     func applicationWillTerminate(_ notification: Notification) {
