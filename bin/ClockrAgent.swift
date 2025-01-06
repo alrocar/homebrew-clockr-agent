@@ -240,13 +240,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Status codes:
         // 0 = unlocked/active
         // 1 = locked
-        // 2 = idle (count this as active)
-        if !trimmedStatus.contains("LOCKED") {  // Active or Idle
+        // 2 = idle
+        if trimmedStatus.contains("UNLOCKED") {  // Active
             if let lastStart = statusStartTime {
                 todayActiveTime += now.timeIntervalSince(lastStart)
             }
             statusStartTime = now
-        } else {  // Locked only
+        } else if trimmedStatus.contains("IDLE") {  // Locked
+            continue
+        } else {  // Locked
             statusStartTime = nil
         }
         
