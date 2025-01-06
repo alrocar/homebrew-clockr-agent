@@ -255,9 +255,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let minutes = Int(todayActiveTime) % 3600 / 60
         let seconds = Int(todayActiveTime) % 60
         
-        os_log("Status code: %{public}@ (0=active, 1=locked, 2=idle) Time: %02d:%02d:%02d", 
-               log: .default, type: .debug, 
-               trimmedStatus, hours, minutes, seconds)
+        NSLog("Status code: %@ (0=active, 1=locked, 2=idle) Time: %02d:%02d:%02d", 
+              trimmedStatus, hours, minutes, seconds)
         
         statusItem?.button?.title = String(format: " %02d:%02d:%02d", hours, minutes, seconds)
     }
