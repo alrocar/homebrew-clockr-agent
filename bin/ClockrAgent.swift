@@ -207,15 +207,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func updateStats() {
-        // Example: Get current time tracked today
-        let statsTask = Process()
-        statsTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-        statsTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-stats.sh && get_today_stats"]
-        
-        let pipe = Pipe()
-        statsTask.standardOutput = pipe
-        
         do {
+            let statsTask = Process()
+            statsTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+            statsTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-stats.sh && get_today_stats"]
+            
+            let pipe = Pipe()
+            statsTask.standardOutput = pipe
             try statsTask.run()
             statsTask.waitUntilExit()
             
