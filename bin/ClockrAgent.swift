@@ -235,16 +235,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let now = Date()
         let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
         
+        NSLog("Raw status received: '%@'", trimmedStatus)  // Debug log
+        
         // Status codes:
         // 0 = unlocked/active
         // 1 = locked
         // 2 = idle
-        if trimmedStatus == "0" {  // Active
+        if trimmedStatus.contains("UNLOCKED") {  // Active
             if let lastStart = statusStartTime {
                 todayActiveTime += now.timeIntervalSince(lastStart)
             }
             statusStartTime = now
-        } else {  // Locked (1) or Idle (2)
+        } else {  // Locked or Idle
             statusStartTime = nil
         }
         
