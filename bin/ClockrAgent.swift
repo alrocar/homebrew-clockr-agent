@@ -233,25 +233,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func updateDisplay(with status: String) {
         let now = Date()
+        let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // If status is unlocked, add the elapsed time since last check
-        if status == "unlocked" {
+        // Status codes:
+        // 0 = unlocked/active
+        // 1 = locked
+        // 2 = idle
+        if trimmedStatus == "0" {  // Active
             if let lastStart = statusStartTime {
                 todayActiveTime += now.timeIntervalSince(lastStart)
             }
             statusStartTime = now
-        } else {
+        } else {  // Locked (1) or Idle (2)
             statusStartTime = nil
         }
         
-        lastStatus = status
+        lastStatus = trimmedStatus
         
         // Update display with hours, minutes, and seconds
         let hours = Int(todayActiveTime) / 3600
         let minutes = Int(todayActiveTime) % 3600 / 60
         let seconds = Int(todayActiveTime) % 60
         
-        NSLog("Status: \(status), Time: \(hours):\(minutes):\(seconds)")
+        os_log("Status code: %{public}@ (0=active, 1=locked, 2=idle) Time: %02d:%02d:%02d", 
+               log: .default, type: .debug, 
+               trimmedStatus, hours, minutes, seconds)
+        
         statusItem?.button?.title = String(format: " %02d:%02d:%02d", hours, minutes, seconds)
     }
 }
