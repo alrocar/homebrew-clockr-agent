@@ -241,13 +241,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 0 = unlocked/active
         // 1 = locked
         // 2 = idle
-        if trimmedStatus.contains("UNLOCKED") {  // Active
+        if trimmedStatus.contains("UNLOCKED") || trimmedStatus.contains("IDLE") {  // Active
             if let lastStart = statusStartTime {
                 todayActiveTime += now.timeIntervalSince(lastStart)
             }
             statusStartTime = now
-        } else if trimmedStatus.contains("IDLE") {  // Locked
-            continue
         } else {  // Locked
             statusStartTime = nil
         }
