@@ -41,7 +41,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
-source "$(dirname "$0")/log.sh"
+source "$(dirname "$0")/clockr-log.sh"
 
 # Set VERBOSE based on environment variable first
 export VERBOSE=${VERBOSE:-0}

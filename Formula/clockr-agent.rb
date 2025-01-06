@@ -22,6 +22,7 @@ class ClockrAgent < Formula
     bin.install "bin/clockr-agent.sh"
     bin.install "bin/clockr-check-display.sh"
     bin.install "bin/clockr-auth.sh"
+    bin.install "bin/clockr-log.sh"
     bin.install "bin/clockr-agent.cfg.template"
 
     # Compile Swift
