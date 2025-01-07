@@ -12,6 +12,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusStartTime: Date?
     var todayActiveTime: TimeInterval = 0
     var isCheckingStatus = false
+    var currentVersion: String? {
+        // Read current version from installed formula
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
+        task.arguments = ["-c", "readlink /opt/homebrew/opt/clockr-agent"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               let version = path.split(separator: "/").last {
+                return "0.0.0.dev\(version)"
+            }
+        } catch {
+            NSLog("Failed to get current version: \(error)")
+        }
+        return nil
+    }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create .clockr directory if it doesn't exist
@@ -102,8 +125,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // Kill entire process group
             let pid = self.task.processIdentifier
-            NSLog("Killing process group \(-pid)")
             kill(-pid, SIGTERM)
+            NSLog("Killing process group \(-pid)")
             Thread.sleep(forTimeInterval: 0.5)
             kill(-pid, SIGKILL)
             
@@ -111,6 +134,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         try? task.run()
+        
+        // Check for updates periodically
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            self?.checkForUpdates()
+        }
+        
+        // Initial update check
+        checkForUpdates()
     }
     
     func cleanupAndQuit() {
@@ -261,6 +292,181 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               trimmedStatus, hours, minutes, seconds)
         
         statusItem?.button?.title = String(format: " %02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    func checkForUpdates() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+        task.arguments = ["info", "clockr-agent"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                // Extract version from brew output
+                if let latestVersion = extractVersion(from: output),
+                   isNewerVersion(latest: latestVersion, current: currentVersion) {
+                    DispatchQueue.main.async {
+                        self.showUpdateAlert(newVersion: latestVersion)
+                    }
+                }
+            }
+        } catch {
+            NSLog("Failed to check for updates: \(error)")
+        }
+    }
+    
+    private func extractVersion(from output: String) -> String? {
+        // Example brew output patterns:
+        // "stable 113" -> "0.0.0.dev113"
+        // "stable 0.0.1" -> "0.0.1"
+        // "stable 0.0.1.dev1" -> "0.0.1.dev1"
+        let pattern = "stable ([0-9]+(?:\\.[0-9]+)*(?:\\.dev[0-9]+)?)"
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(output.startIndex..<output.endIndex, in: output)
+        
+        if let match = regex?.firstMatch(in: output, range: range),
+           let versionRange = Range(match.range(at: 1), in: output) {
+            let version = String(output[versionRange])
+            // If it's just a number, convert to dev format
+            if Int(version) != nil {
+                return "0.0.0.dev\(version)"
+            }
+            return version
+        }
+        return nil
+    }
+    
+    private func isNewerVersion(latest: String?, current: String?) -> Bool {
+        guard let latest = latest, let current = current else { return false }
+        
+        // Split versions into components
+        let latestParts = latest.split(separator: ".")
+        let currentParts = current.split(separator: ".")
+        
+        // Handle dev versions
+        if latest.contains("dev") && current.contains("dev") {
+            if let latestDev = Int(latestParts.last?.dropFirst(3) ?? ""),
+               let currentDev = Int(currentParts.last?.dropFirst(3) ?? "") {
+                return latestDev > currentDev
+            }
+        }
+        
+        // Handle semantic versions
+        let latestNums = latestParts.compactMap { $0.contains("dev") ? nil : Int($0) }
+        let currentNums = currentParts.compactMap { $0.contains("dev") ? nil : Int($0) }
+        
+        // Compare version numbers
+        for i in 0..<min(latestNums.count, currentNums.count) {
+            if latestNums[i] > currentNums[i] {
+                return true
+            }
+            if latestNums[i] < currentNums[i] {
+                return false
+            }
+        }
+        
+        return latestNums.count > currentNums.count
+    }
+    
+    private func showUpdateAlert(newVersion: String) {
+        let alert = NSAlert()
+        alert.messageText = "Update Available"
+        alert.informativeText = "A new version (\(newVersion)) of Clockr is available. Would you like to update now?"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Update")
+        alert.addButton(withTitle: "Later")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            performUpdate()
+        }
+    }
+    
+    private func performUpdate() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+        task.arguments = ["upgrade", "clockr-agent"]
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            
+            if task.terminationStatus == 0 {
+                let restartAlert = NSAlert()
+                restartAlert.messageText = "Update Complete"
+                restartAlert.informativeText = "The update has been installed. Please restart Clockr to apply the changes."
+                restartAlert.alertStyle = .informational
+                restartAlert.addButton(withTitle: "Restart Now")
+                restartAlert.addButton(withTitle: "Later")
+                
+                if restartAlert.runModal() == .alertFirstButtonReturn {
+                    restart()
+                }
+            }
+        } catch {
+            NSLog("Failed to perform update: \(error)")
+        }
+    }
+    
+    private func restart() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
+        task.arguments = ["-c", "brew services restart clockr-agent"]
+        try? task.run()
+        NSApplication.shared.terminate(nil)
+    }
+    
+    func setupMenu() {
+        let menu = NSMenu()
+        
+        // About menu item
+        menu.addItem(NSMenuItem(title: "About Clockr", action: #selector(showAbout), keyEquivalent: ""))
+        
+        // Separator
+        menu.addItem(NSMenuItem.separator())
+        
+        // Quit menu item
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
+        
+        statusItem?.menu = menu
+    }
+    
+    @objc func showAbout() {
+        let alert = NSAlert()
+        alert.messageText = "Clockr"
+        
+        let version = currentVersion ?? "Unknown version"
+        alert.informativeText = """
+            Screen time tracking for macOS
+            
+            Version: \(version)
+            Author: alrocar
+            Website: https://clockr.xyz
+            Open Source: https://github.com/alrocar/homebrew-clockr-agent
+            
+            © 2024 alrocar
+            """
+            
+        alert.alertStyle = .informational
+        
+        // Add an "OK" button
+        alert.addButton(withTitle: "OK")
+        
+        // Add a "Visit Repository" button
+        alert.addButton(withTitle: "Support")
+        
+        let response = alert.runModal()
+        if response == .alertSecondButtonReturn {
+            // Open GitHub repository in default browser
+            if let url = URL(string: "https://github.com/alrocar/homebrew-clockr-agent/issues/new") {
+                NSWorkspace.shared.open(url)
+            }
+        }
     }
 }
 
