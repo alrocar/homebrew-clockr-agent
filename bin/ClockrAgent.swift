@@ -51,12 +51,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             withIntermediateDirectories: true
         )
         
-        // Create the status bar item
+        // Create the status bar item immediately
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
+        // Create basic menu structure immediately
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Authenticate", action: #selector(authenticate), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Visit clockr.xyz", action: #selector(openWebsite), keyEquivalent: ""))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "About", action: #selector(showAbout), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
+        statusItem?.menu = menu
+        
+        // Set initial title
+        statusItem?.button?.title = " --:--:--"
+        
+        // Load icon asynchronously
         if let button = statusItem?.button {
-            // Load custom icon
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            DispatchQueue.global(qos: .userInitiated).async {
                 let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr-icon.png"
                 if let image = NSImage(contentsOfFile: iconPath) {
                     DispatchQueue.main.async {
@@ -68,21 +80,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        // Create the menu asynchronously
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let menu = NSMenu()
-            menu.addItem(NSMenuItem(title: "Clockr: Running", action: nil, keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "Authenticate", action: #selector(self?.authenticate), keyEquivalent: ""))
-            menu.addItem(NSMenuItem(title: "Visit clockr.xyz", action: #selector(self?.openWebsite), keyEquivalent: ""))
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "About", action: #selector(self?.showAbout), keyEquivalent: ""))
-            menu.addItem(NSMenuItem(title: "Quit", action: #selector(self?.quit), keyEquivalent: "q"))
-            
-            DispatchQueue.main.async {
-                self?.statusItem?.menu = menu
-            }
+        // Initial update and timer setup
+        updateStats()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.updateStats()
         }
+        
+        // Check for updates periodically
+        Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            self?.checkForUpdates()
+        }
+        checkForUpdates()
         
         // Request permissions upfront
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
@@ -145,14 +153,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         try? task.run()
-        
-        // Check for updates every hour instead of every 10 seconds
-        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
-            self?.checkForUpdates()
-        }
-        
-        // Initial update check
-        checkForUpdates()
     }
     
     func cleanupAndQuit() {
