@@ -69,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Authenticate", action: #selector(authenticate), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Visit clockr.xyz", action: #selector(openWebsite), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "About", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
         
         statusItem?.menu = menu
@@ -419,21 +420,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         task.arguments = ["-c", "brew services restart clockr-agent"]
         try? task.run()
         NSApplication.shared.terminate(nil)
-    }
-    
-    func setupMenu() {
-        let menu = NSMenu()
-        
-        // About menu item
-        menu.addItem(NSMenuItem(title: "About Clockr", action: #selector(showAbout), keyEquivalent: ""))
-        
-        // Separator
-        menu.addItem(NSMenuItem.separator())
-        
-        // Quit menu item
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
-        
-        statusItem?.menu = menu
     }
     
     @objc func showAbout() {

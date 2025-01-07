@@ -44,10 +44,10 @@ git add $FORMULA_FILE
 git commit -m "Release $NEW_VERSION"
 git push origin main
 
-echo "Updating Homebrew..."
-brew update
+# echo "Updating Homebrew..."
+# brew update
 
-echo "Upgrading clockr-agent..."
-brew upgrade clockr-agent --verbose
+# echo "Upgrading clockr-agent..."
+# brew upgrade clockr-agent --verbose
 
-echo "Release $NEW_VERSION completed!" 
+# echo "Release $NEW_VERSION completed!" 
