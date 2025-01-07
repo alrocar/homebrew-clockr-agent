@@ -36,6 +36,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return nil
     }
     
+    var skippedVersion: String?
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set the app icon
         let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns"
@@ -142,7 +144,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         try? task.run()
         
-        // Check for updates periodically
+        // Check for updates every hour instead of every 10 seconds
         Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             self?.checkForUpdates()
         }
@@ -387,41 +389,79 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func showUpdateAlert(newVersion: String) {
+        // Don't show alert if user skipped this version
+        if newVersion == skippedVersion {
+            return
+        }
+        
         let alert = NSAlert()
         alert.messageText = "Update Available"
         alert.informativeText = "A new version (\(newVersion)) of Clockr is available. Would you like to update now?"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Update")
-        alert.addButton(withTitle: "Later")
+        alert.addButton(withTitle: "Skip")
         
-        if alert.runModal() == .alertFirstButtonReturn {
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
             performUpdate()
+        } else {
+            // Remember skipped version
+            skippedVersion = newVersion
         }
     }
     
     private func performUpdate() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
-        task.arguments = ["upgrade", "clockr-agent"]
+        // First update brew to get latest formulas
+        let updateTask = Process()
+        updateTask.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+        updateTask.arguments = ["update"]
+        
+        let pipe = Pipe()
+        updateTask.standardOutput = pipe
+        updateTask.standardError = pipe
         
         do {
-            try task.run()
-            task.waitUntilExit()
+            try updateTask.run()
+            updateTask.waitUntilExit()
             
-            if task.terminationStatus == 0 {
-                let restartAlert = NSAlert()
-                restartAlert.messageText = "Update Complete"
-                restartAlert.informativeText = "The update has been installed. Please restart Clockr to apply the changes."
-                restartAlert.alertStyle = .informational
-                restartAlert.addButton(withTitle: "Restart Now")
-                restartAlert.addButton(withTitle: "Later")
+            if updateTask.terminationStatus == 0 {
+                // Then upgrade the package
+                let upgradeTask = Process()
+                upgradeTask.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+                upgradeTask.arguments = ["upgrade", "clockr-agent"]
                 
-                if restartAlert.runModal() == .alertFirstButtonReturn {
-                    restart()
+                let upgradePipe = Pipe()
+                upgradeTask.standardOutput = upgradePipe
+                upgradeTask.standardError = upgradePipe
+                
+                try upgradeTask.run()
+                upgradeTask.waitUntilExit()
+                
+                let data = upgradePipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                NSLog("Upgrade output: \(output)")
+                
+                if upgradeTask.terminationStatus == 0 {
+                    let restartAlert = NSAlert()
+                    restartAlert.messageText = "Update Complete"
+                    restartAlert.informativeText = "The update has been installed. Please restart Clockr to apply the changes."
+                    restartAlert.alertStyle = .informational
+                    restartAlert.addButton(withTitle: "Restart Now")
+                    restartAlert.addButton(withTitle: "Later")
+                    
+                    if restartAlert.runModal() == .alertFirstButtonReturn {
+                        restart()
+                    }
+                } else {
+                    showUpdateError("Failed to upgrade: \(output)")
                 }
+            } else {
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                showUpdateError("Failed to update brew: \(output)")
             }
         } catch {
-            NSLog("Failed to perform update: \(error)")
+            showUpdateError("Update failed: \(error.localizedDescription)")
         }
     }
     
@@ -431,6 +471,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         task.arguments = ["-c", "brew services restart clockr-agent"]
         try? task.run()
         NSApplication.shared.terminate(nil)
+    }
+    
+    private func showUpdateError(_ message: String) {
+        NSLog("Update error: \(message)")
+        let alert = NSAlert()
+        alert.messageText = "Update Failed"
+        alert.informativeText = message
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     @objc func showAbout() {
