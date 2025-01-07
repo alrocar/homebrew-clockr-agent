@@ -1,8 +1,8 @@
 class ClockrAgent < Formula
   desc "Monitor screen lock status and active applications on macOS"
   homepage "https://github.com/alrocar/homebrew-clockr-agent"
-  url "https://github.com/alrocar/homebrew-clockr-agent/archive/refs/tags/0.0.0.dev125.tar.gz"
-  sha256 "c3a62d439b573dcaab8f3feeafc032f88dd5da22c20fa03cd3b5e9da964d9744"
+  url "https://github.com/alrocar/homebrew-clockr-agent/archive/refs/tags/0.0.0.dev126.tar.gz"
+  sha256 "b8366f60300a895db0c8ae2b61285b34abf86a39981599a1100f603e710ebdc2"
   license "MIT"
 
   depends_on "curl"
