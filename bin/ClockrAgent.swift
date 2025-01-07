@@ -38,8 +38,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set the app icon
-        if let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns",
-           let image = NSImage(contentsOfFile: iconPath) {
+        let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns"
+        if let image = NSImage(contentsOfFile: iconPath) {
             NSApplication.shared.applicationIconImage = image
         }
         
@@ -438,8 +438,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.messageText = "Clockr"
         
         // Set alert icon
-        if let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns",
-           let image = NSImage(contentsOfFile: iconPath) {
+        let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns"
+        if let image = NSImage(contentsOfFile: iconPath) {
             alert.icon = image
         }
         
@@ -448,25 +448,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Screen time tracking for macOS
             
             Version: \(version)
-            Author: alrocar
-            Website: https://clockr.xyz
-            Open Source: https://github.com/alrocar/homebrew-clockr-agent
+            Author: Alberto Romeu
+            Repository: https://github.com/alrocar/homebrew-clockr-agent
             
-            © 2024 alrocar
+            © 2024 Alberto Romeu
             """
             
         alert.alertStyle = .informational
-        
-        // Add an "OK" button
         alert.addButton(withTitle: "OK")
-        
-        // Add a "Visit Repository" button
-        alert.addButton(withTitle: "Support")
+        alert.addButton(withTitle: "Visit Repository")
         
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
-            // Open GitHub repository in default browser
-            if let url = URL(string: "https://github.com/alrocar/homebrew-clockr-agent/issues/new") {
+            if let url = URL(string: "https://github.com/alrocar/homebrew-clockr-agent") {
                 NSWorkspace.shared.open(url)
             }
         }
