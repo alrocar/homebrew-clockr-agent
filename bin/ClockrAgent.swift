@@ -296,62 +296,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func checkForUpdates() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
-        task.arguments = ["info", "clockr-agent"]
+        // Create URL for GitHub API
+        guard let url = URL(string: "https://api.github.com/repos/alrocar/homebrew-clockr-agent/tags") else {
+            NSLog("Invalid GitHub API URL")
+            return
+        }
         
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        
-        do {
-            try task.run()
-            task.waitUntilExit()
+        let task = URLSession.shared.dataTask(with: url) { [weak self] (data, response, error) in
+            if let error = error {
+                NSLog("Failed to check for updates: \(error)")
+                return
+            }
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                // Extract version from brew output
-                if let latestVersion = extractVersion(from: output),
-                   isNewerVersion(latest: latestVersion, current: currentVersion) {
-                    DispatchQueue.main.async {
-                        self.showUpdateAlert(newVersion: latestVersion)
+            guard let data = data else {
+                NSLog("No data received from GitHub")
+                return
+            }
+            
+            do {
+                // Parse JSON response
+                if let tags = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+                   let latestTag = tags.first?["name"] as? String {
+                    
+                    // Get current version
+                    guard let currentVersion = self?.currentVersion else {
+                        NSLog("Could not determine current version")
+                        return
+                    }
+                    
+                    NSLog("Current version: \(currentVersion), Latest version: \(latestTag)")
+                    
+                    // Compare versions
+                    if self?.isNewerVersion(latest: latestTag, current: currentVersion) == true {
+                        DispatchQueue.main.async {
+                            self?.showUpdateAlert(newVersion: latestTag)
+                        }
                     }
                 }
+            } catch {
+                NSLog("Failed to parse GitHub response: \(error)")
             }
-        } catch {
-            NSLog("Failed to check for updates: \(error)")
         }
-    }
-    
-    private func extractVersion(from output: String) -> String? {
-        // Example brew output patterns:
-        // "stable 113" -> "0.0.0.dev113"
-        // "stable 0.0.1" -> "0.0.1"
-        // "stable 0.0.1.dev1" -> "0.0.1.dev1"
-        let pattern = "stable ([0-9]+(?:\\.[0-9]+)*(?:\\.dev[0-9]+)?)"
-        let regex = try? NSRegularExpression(pattern: pattern)
-        let range = NSRange(output.startIndex..<output.endIndex, in: output)
         
-        if let match = regex?.firstMatch(in: output, range: range),
-           let versionRange = Range(match.range(at: 1), in: output) {
-            let version = String(output[versionRange])
-            // If it's just a number, convert to dev format
-            if Int(version) != nil {
-                return "0.0.0.dev\(version)"
-            }
-            return version
-        }
-        return nil
+        task.resume()
     }
     
     private func isNewerVersion(latest: String?, current: String?) -> Bool {
-        guard let latest = latest, let current = current else { return false }
+        guard let latest = latest?.trimmingCharacters(in: .whitespaces),
+              let current = current?.trimmingCharacters(in: .whitespaces) else { 
+            return false 
+        }
+        
+        // Remove 'v' prefix if present
+        let latestClean = latest.hasPrefix("v") ? String(latest.dropFirst()) : latest
+        let currentClean = current.hasPrefix("v") ? String(current.dropFirst()) : current
         
         // Split versions into components
-        let latestParts = latest.split(separator: ".")
-        let currentParts = current.split(separator: ".")
+        let latestParts = latestClean.split(separator: ".")
+        let currentParts = currentClean.split(separator: ".")
         
         // Handle dev versions
-        if latest.contains("dev") && current.contains("dev") {
+        if latestClean.contains("dev") && currentClean.contains("dev") {
             if let latestDev = Int(latestParts.last?.dropFirst(3) ?? ""),
                let currentDev = Int(currentParts.last?.dropFirst(3) ?? "") {
                 return latestDev > currentDev
