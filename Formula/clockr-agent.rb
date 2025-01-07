@@ -9,7 +9,7 @@ class ClockrAgent < Formula
 
   resource "clockr-icon" do
     url "https://clockr.xyz.com/clockr-icon.tar.gz"
-    sha256 "dbb710d768416665daea2fd1a1414eaac120c3e25629f3c7b3e1d680edb7a6fb"
+    sha256 "b462fe76d8f55670055969e1d49337b7ef09f4a371fe3556f0527ce0a24409f1"
   end
 
   def install
