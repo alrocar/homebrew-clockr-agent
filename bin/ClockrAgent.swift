@@ -342,6 +342,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    private func extractVersion(from output: String) -> String? {
+        // Example brew output: "==> alrocar/clockr-agent/clockr-agent: stable 113"
+        let pattern = "stable ([0-9]+)"
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(output.startIndex..<output.endIndex, in: output)
+        
+        if let match = regex?.firstMatch(in: output, range: range),
+           let versionRange = Range(match.range(at: 1), in: output) {
+            let version = String(output[versionRange])
+            return "0.0.0.dev\(version)"
+        }
+        return nil
+    }
+    
     private func isNewerVersion(latest: String?, current: String?) -> Bool {
         guard let latest = latest?.trimmingCharacters(in: .whitespaces),
               let current = current?.trimmingCharacters(in: .whitespaces) else { 
