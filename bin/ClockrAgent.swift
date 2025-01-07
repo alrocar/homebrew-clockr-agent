@@ -56,31 +56,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let button = statusItem?.button {
             // Load custom icon
-            let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr-icon.png"
-            if let image = NSImage(contentsOfFile: iconPath) {
-                image.isTemplate = true  // Make it work with dark/light modes
-                button.image = image
-                button.imagePosition = .imageLeft
-                updateStats()  // Initial update
-                
-                // Set up timer to update stats every second
-                timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                    self?.updateStats()
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr-icon.png"
+                if let image = NSImage(contentsOfFile: iconPath) {
+                    DispatchQueue.main.async {
+                        image.isTemplate = true
+                        button.image = image
+                        button.imagePosition = .imageLeft
+                    }
                 }
             }
         }
         
-        // Create the menu
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Clockr: Running", action: nil, keyEquivalent: ""))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Authenticate", action: #selector(authenticate), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Visit clockr.xyz", action: #selector(openWebsite), keyEquivalent: ""))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "About", action: #selector(showAbout), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
-        
-        statusItem?.menu = menu
+        // Create the menu asynchronously
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let menu = NSMenu()
+            menu.addItem(NSMenuItem(title: "Clockr: Running", action: nil, keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "Authenticate", action: #selector(self?.authenticate), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: "Visit clockr.xyz", action: #selector(self?.openWebsite), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "About", action: #selector(self?.showAbout), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: "Quit", action: #selector(self?.quit), keyEquivalent: "q"))
+            
+            DispatchQueue.main.async {
+                self?.statusItem?.menu = menu
+            }
+        }
         
         // Request permissions upfront
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
@@ -256,18 +258,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 if let status = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-                    DispatchQueue.main.async {
+                    DispatchQueue.main.async { [weak self] in
                         self?.updateDisplay(with: status)
+                        self?.isCheckingStatus = false
                     }
                 }
             } catch {
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.statusItem?.button?.title = " --:--:--"
                     NSLog("Failed to get stats: \(error)")
+                    self?.isCheckingStatus = false
                 }
             }
-            
-            self?.isCheckingStatus = false
         }
     }
     
@@ -275,24 +277,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let now = Date()
         let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        NSLog("Raw status received: '%@'", trimmedStatus)  // Debug log
+        NSLog("Raw status received: '%@'", trimmedStatus)
         
-        // Status codes:
-        // 0 = unlocked/active
-        // 1 = locked
-        // 2 = idle
-        if trimmedStatus.contains("UNLOCKED") || trimmedStatus.contains("IDLE") {  // Active
+        if trimmedStatus.contains("UNLOCKED") || trimmedStatus.contains("IDLE") {
             if let lastStart = statusStartTime {
                 todayActiveTime += now.timeIntervalSince(lastStart)
             }
             statusStartTime = now
-        } else {  // Locked
+        } else {
             statusStartTime = nil
         }
         
         lastStatus = trimmedStatus
         
-        // Update display with hours, minutes, and seconds
         let hours = Int(todayActiveTime) / 3600
         let minutes = Int(todayActiveTime) % 3600 / 60
         let seconds = Int(todayActiveTime) % 60
