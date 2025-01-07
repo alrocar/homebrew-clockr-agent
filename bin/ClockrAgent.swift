@@ -304,49 +304,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func checkForUpdates() {
-        // Create URL for GitHub API
-        guard let url = URL(string: "https://api.github.com/repos/alrocar/homebrew-clockr-agent/tags") else {
-            NSLog("Invalid GitHub API URL")
-            return
-        }
+        // First update brew to get latest formulas
+        let updateTask = Process()
+        updateTask.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+        updateTask.arguments = ["update"]
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] (data, response, error) in
-            if let error = error {
-                NSLog("Failed to check for updates: \(error)")
-                return
-            }
+        do {
+            try updateTask.run()
+            updateTask.waitUntilExit()
             
-            guard let data = data else {
-                NSLog("No data received from GitHub")
-                return
-            }
-            
-            do {
-                // Parse JSON response
-                if let tags = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-                   let latestTag = tags.first?["name"] as? String {
-                    
-                    // Get current version
-                    guard let currentVersion = self?.currentVersion else {
-                        NSLog("Could not determine current version")
-                        return
-                    }
-                    
-                    NSLog("Current version: \(currentVersion), Latest version: \(latestTag)")
-                    
-                    // Compare versions
-                    if self?.isNewerVersion(latest: latestTag, current: currentVersion) == true {
+            if updateTask.terminationStatus == 0 {
+                // Then check latest version
+                let infoTask = Process()
+                infoTask.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+                infoTask.arguments = ["info", "clockr-agent"]
+                
+                let pipe = Pipe()
+                infoTask.standardOutput = pipe
+                
+                try infoTask.run()
+                infoTask.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    // Extract version from brew info output
+                    if let latestVersion = extractVersion(from: output),
+                       let currentVersion = self.currentVersion,
+                       isNewerVersion(latest: latestVersion, current: currentVersion) {
                         DispatchQueue.main.async {
-                            self?.showUpdateAlert(newVersion: latestTag)
+                            self.showUpdateAlert(newVersion: latestVersion)
                         }
                     }
                 }
-            } catch {
-                NSLog("Failed to parse GitHub response: \(error)")
             }
+        } catch {
+            NSLog("Failed to check for updates: \(error)")
         }
-        
-        task.resume()
     }
     
     private func isNewerVersion(latest: String?, current: String?) -> Bool {
@@ -498,15 +491,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Screen time tracking for macOS
             
             Version: \(version)
-            Author: Alberto Romeu
+            Author: alrocar
             Repository: https://github.com/alrocar/homebrew-clockr-agent
             
-            © 2024 Alberto Romeu
+            © 2024 alrocar - clockr.xyz
             """
             
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Visit Repository")
+        alert.addButton(withTitle: "Support")
         
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
