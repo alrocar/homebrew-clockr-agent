@@ -87,7 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Check for updates periodically
-        Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.checkForUpdates()
         }
         checkForUpdates()
