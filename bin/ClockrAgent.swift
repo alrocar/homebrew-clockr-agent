@@ -37,6 +37,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set the app icon
+        if let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns",
+           let image = NSImage(contentsOfFile: iconPath) {
+            NSApplication.shared.applicationIconImage = image
+        }
+        
         // Create .clockr directory if it doesn't exist
         try? FileManager.default.createDirectory(
             atPath: "\(NSHomeDirectory())/.clockr",
@@ -430,6 +436,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showAbout() {
         let alert = NSAlert()
         alert.messageText = "Clockr"
+        
+        // Set alert icon
+        if let iconPath = "/opt/homebrew/share/clockr-agent/icons/clockr.icns",
+           let image = NSImage(contentsOfFile: iconPath) {
+            alert.icon = image
+        }
         
         let version = currentVersion ?? "Unknown version"
         alert.informativeText = """

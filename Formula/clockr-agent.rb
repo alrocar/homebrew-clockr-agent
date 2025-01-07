@@ -50,6 +50,7 @@ class ClockrAgent < Formula
       cp "clockr-icon.png", "#{icons_dir}/clockr-icon.png"
       cp "clockr-icon@2x.png", "#{icons_dir}/clockr-icon@2x.png"
       cp "clockr-icon@3x.png", "#{icons_dir}/clockr-icon@3x.png"
+      cp "clockr.icns", "#{icons_dir}/clockr.icns"
     }
   end
 
