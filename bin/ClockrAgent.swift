@@ -81,13 +81,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Initial update and timer setup
-        updateStats()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateStats()
-        }
+        // updateStats()
+        // timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        //     self?.updateStats()
+        // }
         
         // Check for updates periodically
-        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.checkForUpdates()
         }
         checkForUpdates()
