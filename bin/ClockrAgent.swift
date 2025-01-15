@@ -64,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu = menu
         
         // Set initial title
-        statusItem?.button?.title = " --:--:--"
+        // statusItem?.button?.title = " --:--:--"
         
         // Load icon asynchronously
         if let button = statusItem?.button {
@@ -211,31 +211,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func authenticate() {
-        let authTask = Process()
-        authTask.executableURL = URL(fileURLWithPath: "/bin/bash")
-        authTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-auth.sh && authenticate_agent"]
-        
-        // Capture output for error handling
-        let pipe = Pipe()
-        authTask.standardOutput = pipe
-        authTask.standardError = pipe
-        
-        do {
-            try authTask.run()
-            authTask.waitUntilExit()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let authTask = Process()
+            authTask.executableURL = URL(fileURLWithPath: "/bin/bash")
+            authTask.arguments = ["-c", "source /opt/homebrew/bin/clockr-auth.sh && authenticate_agent"]
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                NSLog("Auth script output: \(output)")
-            }
+            // Capture output for error handling
+            let pipe = Pipe()
+            authTask.standardOutput = pipe
+            authTask.standardError = pipe
             
-            if authTask.terminationStatus == 0 {
-                // Optionally restart the main task after successful auth
-                task.terminate()
-                try? task.run()
+            do {
+                try authTask.run()
+                authTask.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    NSLog("Auth script output: \(output)")
+                }
+                
+                if authTask.terminationStatus == 0 {
+                    DispatchQueue.main.async {
+                        // Restart the main task after successful auth
+                        self?.task.terminate()
+                        try? self?.task.run()
+                    }
+                }
+            } catch {
+                NSLog("Failed to run auth script: \(error)")
             }
-        } catch {
-            NSLog("Failed to run auth script: \(error)")
         }
     }
     
