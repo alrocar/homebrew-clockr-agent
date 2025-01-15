@@ -80,7 +80,7 @@ source "$CONFIG_FILE" || {
 
 if [ -z "$TSM_SCREEN_USER" ]; then
     echo "No environment variables found. Starting authentication..."
-    authenticate_agent "$CONFIG_FILE"
+    authenticate_agent
     if [ $? -ne 0 ]; then
         echo "Authentication failed"
         exit 1

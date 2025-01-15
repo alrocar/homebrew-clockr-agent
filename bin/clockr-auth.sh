@@ -1,7 +1,9 @@
 #!/bin/bash
 
 authenticate_agent() {
-    local config_file="$1"
+    BREW_PREFIX=$(brew --prefix)
+    config_file="$BREW_PREFIX/etc/clockr-agent/clockr-agent.cfg"
+
     echo "Initializing clockr-agent..."
 
     # Request device code
