@@ -36,8 +36,8 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "ERROR" "Configuration file not found at $CONFIG_FILE"
     echo "ERROR" "Please create a configuration file with required variables:"
     echo "ERROR" "TSM_TB_TOKEN=your_tinybird_token"
+    echo "ERROR" "TSM_TB_API=your_tinybird_api"
     echo "ERROR" "TSM_SCREEN_USER=your_username"
-    echo "ERROR" "TSM_SCREEN_SLEEP_TIME=10"
     exit 1
 fi
 
@@ -206,7 +206,7 @@ while [ "$CLEANUP_DONE" -eq 0 ]; do
         if [[ -n "$previous_timestamp" && $duration -gt 0 ]]; then
             # Send the previous state with its duration
             curl \
-                -X POST 'https://api.tinybird.co/v0/events?name=events&wait=false' \
+                -X POST "$TSM_TB_API/v0/events?name=events&wait=false" \
                 -H "Authorization: Bearer $TSM_TB_TOKEN" \
                 -d "{\"timestamp\":\"$current_date\",\"status\":\"$previous_status\",\"user\":\"$TSM_SCREEN_USER\",\"duration\":$duration,\"app\":\"$previous_app\",\"window_title\":\"$previous_window\",\"domains\":[\"$previous_domain\"],\"tabs\":[\"$previous_tab_url\"]}" \
                 &

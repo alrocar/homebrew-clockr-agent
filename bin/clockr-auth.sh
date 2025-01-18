@@ -40,9 +40,10 @@ authenticate_agent() {
             # Parse credentials
             user_id=$(echo $response | grep -o '"user_id":"[^"]*"' | sed 's/"user_id":"\([^"]*\)"/\1/')
             token=$(echo $response | grep -o '"token":"[^"]*"' | sed 's/"token":"\([^"]*\)"/\1/')
-
+            host=$(echo $response | grep -o '"host":"[^"]*"' | sed 's/"host":"\([^"]*\)"/\1/')
             echo "TSM_SCREEN_USER=$user_id" > "$config_file"
             echo "TSM_TB_TOKEN=$token" >> "$config_file"
+            echo "TSM_TB_API=$host" >> "$config_file"
             
             # Confirm delivery
             curl -s -X POST "http://localhost:3000/api/agent/auth/$device_code/delivered"
